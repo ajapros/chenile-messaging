@@ -12,6 +12,8 @@
         <module>chenile-mqtt</module>
         <module>cloud-edge-switch</module>
         <module>cucumber-mqtt-utils</module>
+        <module>chenile-pub-sub</module>
+        <module>chenile-kafka</module>
     </modules>
 
     <packaging>pom</packaging>
