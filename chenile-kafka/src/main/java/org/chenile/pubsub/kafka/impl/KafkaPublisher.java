@@ -6,8 +6,8 @@ import org.apache.kafka.common.header.internals.RecordHeader;
 import org.chenile.base.exception.ServerException;
 import org.chenile.pubsub.ChenilePub;
 import org.chenile.pubsub.errorcodes.ErrorCodes;
-import org.chenile.pubsub.kafka.provider.PubSubInfoProvider;
 import org.chenile.pubsub.model.ChenilePubSub;
+import org.chenile.pubsub.provider.PubSubInfoProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.kafka.core.KafkaTemplate;
 

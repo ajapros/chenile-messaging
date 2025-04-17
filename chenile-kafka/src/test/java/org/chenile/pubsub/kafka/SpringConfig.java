@@ -11,7 +11,7 @@ import org.springframework.context.annotation.PropertySource;
 import org.springframework.test.context.ActiveProfiles;
 
 @Configuration
-@SpringBootApplication(scanBasePackages = {  "org.chenile.configuration",
+@SpringBootApplication(scanBasePackages = {  "org.chenile.configuration","org.chenile.pubsub.configuration",
 			"org.chenile.pubsub.kafka.service","org.chenile.pubsub.kafka.configuration"})
 @PropertySource("classpath:org/chenile/pubsub/kafka/TestKafka.properties")
 @ActiveProfiles("unittest")
