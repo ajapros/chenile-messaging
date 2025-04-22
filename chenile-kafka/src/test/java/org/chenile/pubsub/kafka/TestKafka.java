@@ -16,6 +16,7 @@ import org.springframework.test.context.junit4.SpringRunner;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 
@@ -27,6 +28,10 @@ public  class TestKafka extends KafkaBaseTest {
 
 	@Autowired private ChenilePub chenilePub;
 	@Autowired private SharedData sharedData;
+
+
+
+
 	@Test @Order(1) public void testIfHeadersAndPayloadWork() throws Exception {
 		Payload payload = new Payload(5,8);
 		Map<String, Object> headers = new HashMap<>();
@@ -40,6 +45,29 @@ public  class TestKafka extends KafkaBaseTest {
 			Assert.fail("Timed out waiting for the function to complete");
 		}
 		Assert.assertEquals("Sum is not computed correctly",23,sharedData.sum );
+	}
+
+
+
+
+	@Test
+	@Order(2)
+	public void testEventHeadersAndPayloadWork() throws Exception {
+
+		sharedData.latch = new CountDownLatch(1);
+		Payload payload = new Payload(5,8);
+		Map<String, Object> headers = new HashMap<>();
+		headers.put("num3",10);
+		//headers.put(Constants.TEST_MODE, true);
+		String s = new ObjectMapper().writeValueAsString(payload);
+
+		chenilePub.publishToExternal("kafka1",
+				s,headers);
+
+		if(!sharedData.latch.await(1000, TimeUnit.SECONDS)){
+			Assert.fail("Timed out waiting for the function to complete");
+		}
+		Assert.assertEquals("Sum is not computed correctly",15,sharedData.sum );
 	}
 
 }

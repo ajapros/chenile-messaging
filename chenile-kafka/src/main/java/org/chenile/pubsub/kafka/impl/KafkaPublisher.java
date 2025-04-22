@@ -42,6 +42,19 @@ public class KafkaPublisher implements ChenilePub {
     }
 
     @Override
+    public void publishToExternal(String topic, String payload, Map<String, Object> properties) {
+        List<Header> headers = new ArrayList<>();
+        for (Map.Entry<String, Object> entry : properties.entrySet()) {
+            headers.add(new RecordHeader(entry.getKey(), String.valueOf(entry.getValue()).getBytes(StandardCharsets.UTF_8)));
+        }
+        headers.add(new RecordHeader(CHENILE_TOPIC_KEY,String.valueOf(topic).getBytes(StandardCharsets.UTF_8)));
+
+        ProducerRecord<String, String> record = new ProducerRecord <>(topic, null, "message", payload, headers);
+
+        kafkaTemplate.send(record);
+    }
+
+    @Override
     public void publish(String topic, String payload, Map<String, Object> properties) {
 
         List<Header> headers = new ArrayList<>();
@@ -55,6 +68,7 @@ public class KafkaPublisher implements ChenilePub {
 
         kafkaTemplate.send(record);
     }
+
 
 
     /**
