@@ -9,7 +9,6 @@ public interface ChenilePub {
 
     void publish(String topic,  String payload, Map<String,Object> properties);
 
-    void publishToExternal(String topic,  String payload, Map<String,Object> properties);
-
+    void asyncPublish(String topic, String payload, Map<String,Object> properties);
 
 }

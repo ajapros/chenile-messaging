@@ -11,6 +11,7 @@ import org.junit.jupiter.api.TestMethodOrder;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringRunner;
 
@@ -24,6 +25,7 @@ import java.util.concurrent.TimeUnit;
 @SpringBootTest(classes = SpringConfig.class)
 @ActiveProfiles("unittest")
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
+@DirtiesContext
 public  class TestKafka extends KafkaBaseTest {
 
 	@Autowired private ChenilePub chenilePub;
@@ -61,7 +63,7 @@ public  class TestKafka extends KafkaBaseTest {
 		//headers.put(Constants.TEST_MODE, true);
 		String s = new ObjectMapper().writeValueAsString(payload);
 
-		chenilePub.publishToExternal("kafka1",
+		chenilePub.asyncPublish("kafka1",
 				s,headers);
 
 		if(!sharedData.latch.await(1000, TimeUnit.SECONDS)){

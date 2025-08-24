@@ -4,14 +4,13 @@ import org.junit.ClassRule;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.KafkaContainer;
-import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.utility.DockerImageName;
 
 public class KafkaBaseTest {
 
     @ClassRule
     public static KafkaContainer kafkaContainer
-            = new KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:latest"))
+            = new KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:7.5.0"))
             .withExposedPorts(9093)  // Expose port 9093 for external access
             .waitingFor(org.testcontainers.containers.wait.strategy.Wait.forListeningPort())  // Wait for the port to be ready
             .withEnv("KAFKA_LISTENER_SECURITY_PROTOCOL", "PLAINTEXT")
