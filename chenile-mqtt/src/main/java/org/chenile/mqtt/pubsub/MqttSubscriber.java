@@ -1,8 +1,10 @@
 package org.chenile.mqtt.pubsub;
 
-import org.chenile.mqtt.MqttInfoProvider;
-import org.chenile.mqtt.entry.MqttEntryPoint;
-import org.chenile.mqtt.model.ChenileMqtt;
+import org.chenile.pubsub.ChenileSub;
+import org.chenile.pubsub.constants.Constants;
+import org.chenile.pubsub.entry.PubSubEntryPoint;
+import org.chenile.pubsub.model.ChenilePubSub;
+import org.chenile.pubsub.provider.PubSubInfoProvider;
 import org.eclipse.paho.mqttv5.client.IMqttToken;
 import org.eclipse.paho.mqttv5.client.MqttAsyncClient;
 import org.eclipse.paho.mqttv5.client.MqttCallback;
@@ -10,27 +12,29 @@ import org.eclipse.paho.mqttv5.client.MqttDisconnectResponse;
 import org.eclipse.paho.mqttv5.common.MqttException;
 import org.eclipse.paho.mqttv5.common.MqttMessage;
 import org.eclipse.paho.mqttv5.common.packet.MqttProperties;
+import org.eclipse.paho.mqttv5.common.packet.UserProperty;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 
+import java.util.HashMap;
 import java.util.Map;
 
 /**
  * MQTT subscription call back that supports receiving messages, reconnects etc.
  */
-public class MqttSubscriber implements MqttCallback {
+public class MqttSubscriber implements MqttCallback, ChenileSub {
     private final boolean mqttEnabled;
-    @Autowired @Qualifier("mqttConfig")
-    Map<String,String> mqttConfig;
+    @Autowired @Qualifier("pubSubConfig")
+    Map<String,String> pubSubConfig;
     @Autowired
     MqttAsyncClient v5Client;
     Logger logger = LoggerFactory.getLogger(MqttSubscriber.class);
     @Autowired
-    MqttEntryPoint mqttEntryPoint;
+    PubSubEntryPoint pubSubEntryPoint;
     @Autowired
-    MqttInfoProvider mqttInfoProvider;
+    PubSubInfoProvider pubSubInfoProvider;
     @Autowired
     MqttPublisher publisher;
 
@@ -70,21 +74,22 @@ public class MqttSubscriber implements MqttCallback {
         String messageContent = new String(message.getPayload());
         log("Received at topic = |" + topic + "| message = ||\n" + messageContent + "||\n"
                 + " with ID = " + message.getId() + "User properties = ");
+        Map<String,Object> headers = new HashMap<>();
         if(message.getProperties() != null) {
             message.getProperties().getUserProperties().forEach(
                     (up) -> {
                         log("key = " + up.getKey() + " value = " + up.getValue());
+                        headers.put(up.getKey(), up.getValue());
                     });
         }
         if(shouldIgnore(message)) {
             return;
         }
-        try {
-            mqttEntryPoint.process(topic, message);
-        }catch(Exception e){
-            log("Exception in entry point. Message = " + e.getMessage());
-        }
+
+        messageArrived(topic, messageContent, headers);
+
         publisher.sendAck(message);
+
     }
 
     /**
@@ -106,10 +111,10 @@ public class MqttSubscriber implements MqttCallback {
             publisher.sendAck(message);
             return true;
         }
-        boolean testMode = mqttInfoProvider.getTestMode(message);
+        boolean testMode = getTestMode(message);
         if (testMode) return false; // don't ignore in test mode.
         // source and target checks
-        String source = mqttInfoProvider.getSource(message);
+        String source = getSource(message);
         // ignore messages if they originate from us
         if (source != null && source.equals(v5Client.getClientId())){
             log("Ignoring message as the source = current client ID = " + v5Client.getClientId());
@@ -117,7 +122,7 @@ public class MqttSubscriber implements MqttCallback {
             return true;
         }
         // if target is set and we are not the target then ignore this message
-        String target = mqttInfoProvider.getTarget(message);
+        String target = getTarget(message);
         if(target == null) return false;
         // if target is marked with a !sign then if we are the target we should
         // ignore this message
@@ -151,11 +156,11 @@ public class MqttSubscriber implements MqttCallback {
     @Override
     public void connectComplete(boolean reconnect, String serverURI) {
         log(String.format("Connection to %s complete. Reconnect=%b", serverURI, reconnect));
-        if (reconnect && mqttConfig != null && !mqttConfig.isEmpty() && v5Client != null &&
+        if (reconnect && pubSubConfig != null && !pubSubConfig.isEmpty() && v5Client != null &&
              mqttEnabled ){
-            for (String serviceTopic: mqttConfig.keySet()){
+            for (String serviceTopic: pubSubConfig.keySet()){
                 try {
-                    ChenileMqtt m = mqttInfoProvider.obtainChenileMqtt(mqttConfig.get(serviceTopic));
+                    ChenilePubSub m = pubSubInfoProvider.obtainChenileMqtt(pubSubConfig.get(serviceTopic));
                     v5Client.subscribe(serviceTopic + "/+", m.qos());
                 }catch(Exception e){
                     log("Unable to subscribe to topic " + serviceTopic + ". Error = " + e.getMessage());
@@ -174,5 +179,40 @@ public class MqttSubscriber implements MqttCallback {
     public void authPacketArrived(int reasonCode, MqttProperties properties) {
         log(String.format("Auth packet received, this client does not currently support them. Reason Code: %d.",
                 reasonCode));
+    }
+
+    @Override
+    public void messageArrived(String topic, String message, Map<String, Object> headers) {
+        try {
+            pubSubEntryPoint.process(topic, message, headers);
+        }catch(Exception e){
+            log("Exception in entry point. Message = " + e.getMessage());
+            throw new RuntimeException(e);
+        }
+
+    }
+
+
+    private String getUserPropertyValue(MqttMessage message, String key){
+        MqttProperties props = message.getProperties();
+        if (props == null) return null;
+        for (UserProperty up: props.getUserProperties()){
+            if (up.getKey() != null && up.getKey().equals(key)){
+                return up.getValue();
+            }
+        }
+        return null;
+    }
+
+    private String getSource(MqttMessage message){
+        return getUserPropertyValue(message, Constants.SOURCE);
+    }
+
+    public String getTarget(MqttMessage message){
+        return getUserPropertyValue(message,Constants.TARGET);
+    }
+    public boolean getTestMode(MqttMessage message){
+        String testMode = getUserPropertyValue(message,Constants.TEST_MODE);
+        return Boolean.parseBoolean(testMode);
     }
 }

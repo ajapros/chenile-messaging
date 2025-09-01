@@ -4,7 +4,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.chenile.base.response.GenericResponse;
 import org.chenile.http.annotation.ChenileController;
 import org.chenile.http.handler.ControllerSupport;
-import org.chenile.mqtt.model.ChenileMqtt;
+import org.chenile.pubsub.model.ChenilePubSub;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -12,7 +12,7 @@ import java.util.Map;
 
 
 @RestController
-@ChenileMqtt
+@ChenilePubSub
 @ChenileController(value = "testService", serviceName = "testService")
 public class TestController extends ControllerSupport{
 	@PostMapping("/f/{num3}")

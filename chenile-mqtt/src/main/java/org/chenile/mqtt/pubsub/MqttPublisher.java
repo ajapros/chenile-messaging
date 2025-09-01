@@ -1,10 +1,11 @@
 package org.chenile.mqtt.pubsub;
 
 import org.chenile.base.exception.ServerException;
-import org.chenile.mqtt.Constants;
-import org.chenile.mqtt.MqttInfoProvider;
-import org.chenile.mqtt.errorcodes.ErrorCodes;
-import org.chenile.mqtt.model.ChenileMqtt;
+import org.chenile.pubsub.constants.Constants;
+import org.chenile.pubsub.ChenilePub;
+import org.chenile.pubsub.errorcodes.ErrorCodes;
+import org.chenile.pubsub.model.ChenilePubSub;
+import org.chenile.pubsub.provider.PubSubInfoProvider;
 import org.eclipse.paho.mqttv5.client.IMqttToken;
 import org.eclipse.paho.mqttv5.client.MqttAsyncClient;
 import org.eclipse.paho.mqttv5.common.MqttException;
@@ -17,7 +18,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -25,7 +25,8 @@ import java.util.Map;
  * Used to publish MQTT messages. Defaults are picked up from application properties.
  *
  */
-public class MqttPublisher {
+public class MqttPublisher implements ChenilePub {
+
     Logger logger = LoggerFactory.getLogger(MqttPublisher.class);
     @Autowired private MqttAsyncClient v5Client;
     public void setActionTimeout(int actionTimeout) {
@@ -43,7 +44,7 @@ public class MqttPublisher {
         this.retain = retain;
     }
     @Autowired
-    MqttInfoProvider mqttInfoProvider;
+    PubSubInfoProvider pubSubInfoProvider;
     private boolean retain = true;
 
     /**
@@ -56,9 +57,8 @@ public class MqttPublisher {
      * @param properties the headers properties that need to be sent
      * @throws Exception if there is an error in dispatching the message
      */
-    public void publishToOperation(String service, String operationName,String payload,Map<String,Object> properties)
-     throws Exception {
-        ChenileMqtt m = mqttInfoProvider.obtainChenileMqtt(service);
+    public void publishToOperation(String service, String operationName,String payload,Map<String,Object> properties) {
+        ChenilePubSub m = pubSubInfoProvider.obtainChenileMqtt(service);
         if (m == null) {
             throw new ServerException(ErrorCodes.CANNOT_FIND_TOPIC.getSubError(),
                     new Object[] { service});
@@ -90,9 +90,13 @@ public class MqttPublisher {
      * @throws MqttPersistenceException if there is a problem in persisting the message that needs to be sent
      * @throws MqttException if there is any other exception
      */
-    public void publish(String topic,  String payload, Map<String,Object> properties)
-            throws MqttPersistenceException, MqttException {
+    public void publish(String topic,  String payload, Map<String,Object> properties){
         publish (topic,-1,payload,properties);
+    }
+
+    @Override
+    public void asyncPublish(String topic, String payload, Map<String, Object> properties) {
+        // Need to write
     }
 
     /**
@@ -104,8 +108,7 @@ public class MqttPublisher {
      * @throws MqttPersistenceException if there is a problem in persisting the message that needs to be sent
      * @throws MqttException if there is any other exception
      */
-    public void publish(String topic, int givenQos, String payload, Map<String,Object> properties)
-            throws MqttPersistenceException, MqttException {
+    public void publish(String topic, int givenQos, String payload, Map<String,Object> properties){
         MqttMessage v5Message = new MqttMessage(payload.getBytes());
         MqttProperties props = new MqttProperties();
         List<UserProperty> userProperties = new ArrayList<>();
@@ -122,8 +125,14 @@ public class MqttPublisher {
             givenQos = this.qos;
         v5Message.setQos(givenQos);
         v5Message.setRetained(retain);
-        IMqttToken deliveryToken = v5Client.publish(topic, v5Message);
-        deliveryToken.waitForCompletion(actionTimeout);
+        IMqttToken deliveryToken = null;
+        try {
+            deliveryToken = v5Client.publish(topic, v5Message);
+            deliveryToken.waitForCompletion(actionTimeout);
+        } catch (MqttException e) {
+            throw new RuntimeException(e);
+        }
+
     }
 
     /**

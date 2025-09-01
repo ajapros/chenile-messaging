@@ -1,10 +1,9 @@
 package org.chenile.configuration.mqtt;
 
-import org.chenile.mqtt.MqttInfoProvider;
-import org.chenile.mqtt.entry.MqttEntryPoint;
-import org.chenile.mqtt.init.MqttInitializer;
 import org.chenile.mqtt.pubsub.MqttPublisher;
 import org.chenile.mqtt.pubsub.MqttSubscriber;
+import org.chenile.pubsub.model.ChenilePubSub;
+import org.chenile.pubsub.wildcard.WildCardsTopic;
 import org.eclipse.paho.mqttv5.client.DisconnectedBufferOptions;
 import org.eclipse.paho.mqttv5.client.IMqttToken;
 import org.eclipse.paho.mqttv5.client.MqttAsyncClient;
@@ -33,7 +32,7 @@ import java.util.Map;
 @Configuration
 public class MqttConfiguration {
     Logger logger = LoggerFactory.getLogger(MqttConfiguration.class);
-    @Value("${mqtt.connection.ServerURIs}") private String hostURI;
+    @Value("${pubsub.mqtt.connection.ServerURIs}") private String hostURI;
     /**
      * This is the base publish topic that will be pre-pended to publish  messages.
      * This can contain specific expressions such as {tenantId} for example which
@@ -44,24 +43,24 @@ public class MqttConfiguration {
      * substituted from the headers (such as tenant Id etc.)
      * But if it is a constant expression they both can be the same. (default: chenile)
      */
-    @Value("${mqtt.publish.base.topic:chenile}") String basePublishTopic;
+    @Value("${pubsub.mqtt.publish.base.topic:chenile}") String basePublishTopic;
     /**
      * This is the base topic name that will pre-pended for all subscriptions. It can contain
      * wild cards such as + in accordance with the MQ-TT subscription rules . (default: chenile)
      */
-    @Value("${mqtt.subscribe.base.topic:chenile}") private String baseSubscribeTopic;
-    @Value("${mqtt.will.payload}") private String willPayload;
-    @Value("${mqtt.will.qos}") private int willQos;
-    @Value("${mqtt.will.retained}") private boolean willRetained;
-    @Value("${mqtt.will.topic}") private String willTopic;
-    @Value("${mqtt.clientID}") private String clientID;
-    @Value("${mqtt.actionTimeout}") private int actionTimeout;
-    @Value("${mqtt.enabled:true}") private boolean mqttEnabled;
-    @Value("${mqtt.connection.session.expiry}") private Long sessionExpiry;
+    @Value("${pubsub.mqtt.subscribe.base.topic:chenile}") private String baseSubscribeTopic;
+    @Value("${pubsub.mqtt.will.payload}") private String willPayload;
+    @Value("${pubsub.mqtt.will.qos}") private int willQos;
+    @Value("${pubsub.mqtt.will.retained}") private boolean willRetained;
+    @Value("${pubsub.mqtt.will.topic}") private String willTopic;
+    @Value("${pubsub.clientID}") private String clientID;
+    @Value("${pubsub.mqtt.actionTimeout}") private int actionTimeout;
+    @Value("${pubsub.enabled:true}") private boolean mqttEnabled;
+    @Value("${pubsub.mqtt.connection.session.expiry}") private Long sessionExpiry;
 
     @Bean public Map<String,String> mqttConnectionDetails(){
         Map<String,String> cd = new HashMap<>();
-        cd.put("mqtt.connection.ServerURIs",hostURI);
+        cd.put("pubsub.mqtt.connection.ServerURIs",hostURI);
         return cd;
     }
 
@@ -98,7 +97,7 @@ public class MqttConfiguration {
     }
 
     @Bean
-    @ConfigurationProperties(prefix = "mqtt.disconnected.buffer")
+    @ConfigurationProperties(prefix = "pubsub.mqtt.disconnected.buffer")
     DisconnectedBufferOptions disconnectedBufferOptions(){
         return new DisconnectedBufferOptions();
     }
@@ -109,7 +108,7 @@ public class MqttConfiguration {
             @Autowired MqttConnectionOptions connOpts,
             @Autowired MemoryPersistence persistence,
             @Autowired DisconnectedBufferOptions disconnectedBufferOptions) throws MqttException {
-        String uri = mqttConnectionDetails.get("mqtt.connection.ServerURIs");
+        String uri = mqttConnectionDetails.get("pubsub.mqtt.connection.ServerURIs");
         MqttAsyncClient v5Client = new MqttAsyncClient(uri, clientID, persistence);
         v5Client.setBufferOpts(disconnectedBufferOptions);
         // Combination of clean start and session, broker will wait for subscriber for given time,
@@ -130,34 +129,39 @@ public class MqttConfiguration {
         v5Client.setCallback(subscriber);
         return subscriber;
     }
-    @Bean @ConfigurationProperties(prefix = "mqtt.publish")
+    @Bean @ConfigurationProperties(prefix = "pubsub.mqtt.publish")
     MqttPublisher mqttPublisher(){
         return new MqttPublisher();
     }
-    @Bean
-    MqttEntryPoint mqttEntryPoint(){
-        return new MqttEntryPoint();
-    }
-    @Bean
-    MqttInitializer mqttInitializer(){
-        return new MqttInitializer(mqttEnabled,basePublishTopic,baseSubscribeTopic);
-    }
-
-    /**
-     * A topic to service map.<br/>
-     * This map is internally used to route a message that arrives at a topic to a service.<br/>
-     * This map is populated by the MqttInitializer during the initialization phase.<br/>
-     * It is used by the MqttEntryPoint during runtime to invoke the appropriate operation in a service<br/>
-     * @return a configuration that maps a route to a service.
-     *
-     */
-    @Bean
-    Map<String,String> mqttConfig(){
-        return new HashMap<>();
-    }
 
     @Bean
-    MqttInfoProvider mqttInfoProvider(){
-        return new MqttInfoProvider();
+    public WildCardsTopic wildCardsTopic(@Autowired MqttAsyncClient v5Client){
+        return new WildCardsTopic() {
+            @Override
+            public void subscribeTo(String subscribeTopic, ChenilePubSub chenilePubSub) {
+                // subscribe to this topic and all the topics underneath it
+                // We use a single level filter since all operations are supported under it
+
+                try {
+                    if(!mqttEnabled) return; // don't subscribe to the topic if mqtt is not enabled.
+                    // but we need to do the rest of the stuff. Otherwise, we cannot publish to the correct topic
+                    logger.info("Subscribing to topic " + subscribeTopic + "/+");
+                    IMqttToken token = v5Client.subscribe(subscribeTopic + "/+", chenilePubSub.qos());
+                    token.waitForCompletion();
+                } catch (MqttException e) {
+                    throw new RuntimeException(e);
+                }
+
+            }
+
+            @Override
+            public void globalTopic() {
+
+            }
+
+        };
+
+
     }
+
 }

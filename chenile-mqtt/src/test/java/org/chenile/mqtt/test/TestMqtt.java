@@ -1,7 +1,7 @@
 package org.chenile.mqtt.test;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.chenile.mqtt.Constants;
+import org.chenile.pubsub.constants.Constants;
 import org.chenile.mqtt.pubsub.MqttPublisher;
 import org.chenile.mqtt.test.service.Payload;
 import org.junit.Assert;

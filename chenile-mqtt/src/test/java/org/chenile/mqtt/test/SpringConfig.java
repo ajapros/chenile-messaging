@@ -11,8 +11,7 @@ import org.springframework.context.annotation.PropertySource;
 import org.springframework.test.context.ActiveProfiles;
 
 @Configuration
-@SpringBootApplication(scanBasePackages = {  "org.chenile.configuration",
-			"org.chenile.mqtt.test.service"})
+@SpringBootApplication(scanBasePackages = {  "org.chenile"})
 @PropertySource("classpath:org/chenile/mqtt/test/TestMqtt.properties")
 @ActiveProfiles("unittest")
 public class SpringConfig extends SpringBootServletInitializer{
