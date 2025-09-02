@@ -5,14 +5,14 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>org.chenile</groupId>
-    <artifactId>chenile-mqtt-parent</artifactId>
+    <artifactId>chenile-pub-sub-parent</artifactId>
     <version>${revision}</version>
 
     <modules>
+        <module>chenile-pub-sub</module>
+        <module>cucumber-mqtt-utils</module>
         <module>chenile-mqtt</module>
         <module>cloud-edge-switch</module>
-        <module>cucumber-mqtt-utils</module>
-        <module>chenile-pub-sub</module>
         <module>chenile-kafka</module>
     </modules>
 

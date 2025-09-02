@@ -2,7 +2,10 @@ package org.chenile.pubsub.kafka.configuration;
 
 import org.chenile.pubsub.ChenilePub;
 import org.chenile.pubsub.kafka.impl.KafkaPublisher;
+import org.chenile.pubsub.model.ChenilePubSub;
 import org.chenile.pubsub.provider.PubSubInfoProvider;
+import org.chenile.pubsub.wildcard.WildCardsTopic;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -18,4 +21,28 @@ public class KafkaConfiguration {
                                  PubSubInfoProvider pubSubInfoProvider) {
         return new KafkaPublisher(kafkaTemplate, pubSubInfoProvider);
     }
+
+    @Bean
+    public WildCardsTopic wildCardsTopic(){
+        return new WildCardsTopic() {
+            @Override
+            public void subscribeTo(String subscribeTopic, ChenilePubSub chenilePubSub) {
+                // subscribe to this topic and all the topics underneath it
+                // We use a single level filter since all operations are supported under it
+
+                //logger.info("Subscribing to topic " + subscribeTopic );
+                //topics.add("^"+subscribeTopic+"_.*");
+
+            }
+
+            @Override
+            public void globalTopic() {
+
+            }
+
+        };
+
+
+    }
+
 }

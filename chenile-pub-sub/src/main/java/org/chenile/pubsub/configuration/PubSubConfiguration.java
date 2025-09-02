@@ -3,6 +3,8 @@ package org.chenile.pubsub.configuration;
 import org.chenile.pubsub.entry.PubSubEntryPoint;
 import org.chenile.pubsub.init.ChenilePubSubInitializer;
 import org.chenile.pubsub.provider.PubSubInfoProvider;
+import org.chenile.pubsub.wildcard.WildCardsTopic;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -19,7 +21,7 @@ public class PubSubConfiguration {
      * wild cards such as + in accordance with the MQ-TT subscription rules . (default: chenile)
      */
     @Value("${mqtt.subscribe.base.topic:chenile}") private String baseSubscribeTopic;
-    @Value("${mqtt.enabled:true}") private boolean mqttEnabled;
+    @Value("${pubsub.enabled:true}") private boolean mqttEnabled;
 
 
     @Bean
@@ -28,10 +30,18 @@ public class PubSubConfiguration {
     }
 
     @Bean
-    public ChenilePubSubInitializer chenilePubSubInitializer(){
-        return new ChenilePubSubInitializer(mqttEnabled,basePublishTopic,baseSubscribeTopic);
+    public ChenilePubSubInitializer chenilePubSubInitializer(WildCardsTopic wildCardsTopic){
+        return new ChenilePubSubInitializer(mqttEnabled,basePublishTopic,baseSubscribeTopic,wildCardsTopic);
     }
 
+    /**
+     * A topic to service map.<br/>
+     * This map is internally used to route a message that arrives at a topic to a service.<br/>
+     * This map is populated by the MqttInitializer during the initialization phase.<br/>
+     * It is used by the MqttEntryPoint during runtime to invoke the appropriate operation in a service<br/>
+     * @return a configuration that maps a route to a service.
+     *
+     */
     @Bean
     Map<String,String> pubSubConfig(){
         return new HashMap<>();

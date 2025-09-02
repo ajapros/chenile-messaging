@@ -60,33 +60,39 @@ query:
     jdbcUrl: jdbc:h2:mem:demo;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
   mapperFiles: classpath*:com/netscoretech/pos/query/service/mapper/*.xml
   definitionFiles: classpath*:com/netscoretech/pos/query/service/mapper/*.json
-mqtt:
-  connection:
-    ServerURIs: tcp://localhost:1883
-    keepAliveInterval: 120000
-    userName: emqx_test
-    password: emqx_test_password
-    cleanStart: true
-    receiveMaximum: 1000
-    automaticReconnect: true
-    session:
-      expiry: 12000
 
-  will:
-    payload: I am dead
-    qos: 0
-    retained: false
-    topic: willTopic
+pubsub:
+  topic:
+    separator: /
+  clientID: someClient
+  enabled: true
+  mqtt:
+    connection:
+      ServerURIs: tcp://localhost:1883
+      keepAliveInterval: 120000
+      userName: emqx_test
+      password: emqx_test_password
+      cleanStart: true
+      receiveMaximum: 1000
+      automaticReconnect: true
+      session:
+        expiry: 12000
 
-  clientID: cloudMqtt
-  actionTimeout: 12000
-  enabled: false
+    will:
+      payload: I am dead
+      qos: 0
+      retained: false
+      topic: willTopic
 
-  publish:
-    actionTimeout: 120
-    qos: 2
-    retain: false
-    topic: /chenile/mqtt
+    clientID: cloudMqtt
+    actionTimeout: 12000
+    enabled: false
+
+    publish:
+      actionTimeout: 120
+      qos: 2
+      retain: false
+      topic: /chenile/mqtt
 
 cloud:
   remoteUrl: localhost:8089

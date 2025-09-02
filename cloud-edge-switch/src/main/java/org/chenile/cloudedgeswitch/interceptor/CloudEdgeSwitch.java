@@ -15,7 +15,7 @@ import org.chenile.core.model.HttpBindingType;
 import org.chenile.core.model.OperationDefinition;
 import org.chenile.core.model.ParamDefinition;
 import org.chenile.core.util.MethodUtils;
-import org.chenile.mqtt.Constants;
+import org.chenile.pubsub.constants.Constants;
 import org.chenile.mqtt.pubsub.MqttPublisher;
 import org.chenile.owiz.impl.ChainContext;
 import org.chenile.proxy.builder.ProxyBuilder;
@@ -76,7 +76,7 @@ public class CloudEdgeSwitch extends BaseChenileInterceptor {
 		}
 
 		String entryPoint = exchange.getHeader(HeaderUtils.ENTRY_POINT,String.class);
-		if (entryPoint != null && entryPoint.equals(Constants.MQTT_ENTRY_POINT))
+		if (entryPoint != null && entryPoint.equals(Constants.PUB_SUB_ENTRY_POINT))
 			handleMqtt(exchange);
 		else if (entryPoint != null && entryPoint.equals(HTTP_ENTRY_POINT))
 			handleHttp(exchange);
@@ -193,7 +193,7 @@ public class CloudEdgeSwitch extends BaseChenileInterceptor {
 	private Map<String,Object> addMqttTargetHeaderIfRequired(ChenileExchange exchange){
 		Map<String,Object> headers = new HashMap<>();
 		String entryPoint = exchange.getHeader(HeaderUtils.ENTRY_POINT,String.class);
-		if (entryPoint != null && entryPoint.equals(Constants.MQTT_ENTRY_POINT)){
+		if (entryPoint != null && entryPoint.equals(Constants.PUB_SUB_ENTRY_POINT)){
 			String source = exchange.getHeader(Constants.SOURCE, String.class);
             logger.debug("Adding an MQTT header !{} for target", source);
 			if (source != null){

@@ -5,7 +5,7 @@
     <parent>
         <groupId>org.chenile</groupId>
         <version>${revision}</version>
-        <artifactId>chenile-mqtt-parent</artifactId>
+        <artifactId>chenile-pub-sub-parent</artifactId>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
@@ -14,10 +14,6 @@
     <name>cloud-edge-switch - switches behaviours between the cloud and the edge</name>
 
     <dependencies>
-        <dependency>
-            <groupId>org.chenile</groupId>
-            <artifactId>service-registry-service</artifactId>
-        </dependency>
         <dependency>
             <groupId>org.chenile</groupId>
             <artifactId>chenile-http</artifactId>
@@ -43,6 +39,11 @@
         <dependency>
             <groupId>org.wiremock</groupId>
             <artifactId>wiremock-standalone</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.chenile</groupId>
+            <artifactId>service-registry-service</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>

@@ -1,4 +1,4 @@
-package org.chenile.mqtt;
+package org.chenile.pubsub.constants;
 
 /**
  * Chenile MQTT constants
@@ -8,7 +8,7 @@ public class Constants {
      * This is the value for the {@link org.chenile.core.context.HeaderUtils#ENTRY_POINT} header
      * in {@link org.chenile.core.context.ChenileExchange} for all requests that came through MQ-TT
      */
-    public static final String MQTT_ENTRY_POINT = "PUB-SUB";
+    public static final String PUB_SUB_ENTRY_POINT = "PUB_SUB";
     public static final String SOURCE = "source"; // the source of the message in MQTT
     public static final String TARGET = "target"; // the target of the message in MQTT
 

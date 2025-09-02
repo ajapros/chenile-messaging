@@ -8,6 +8,7 @@ import org.chenile.core.entrypoint.ChenileEntryPoint;
 import org.chenile.core.model.ChenileConfiguration;
 import org.chenile.core.model.ChenileServiceDefinition;
 import org.chenile.core.model.OperationDefinition;
+import org.chenile.pubsub.constants.Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,8 +26,10 @@ public class PubSubEntryPoint {
 	private ChenileConfiguration chenileConfiguration;
 	@Autowired @Qualifier("pubSubConfig")
 	Map<String,String> pubSubConfig;
+
 	@Autowired
-	ChenileEntryPoint chenileEntryPoint;
+	private ChenileEntryPoint chenileEntryPoint;
+
 	private final ObjectMapper objectMapper = new ObjectMapper();
 
 	/**
@@ -37,7 +40,7 @@ public class PubSubEntryPoint {
 	 */
 	 public void process(String topic, String messageContent,Map<String,Object> headers) throws Exception{
 		 ChenileExchange exchange = makeExchange(topic);
-		 exchange.setHeader(HeaderUtils.ENTRY_POINT, "pub_sub");
+		 exchange.setHeader(HeaderUtils.ENTRY_POINT, Constants.PUB_SUB_ENTRY_POINT);
 		 exchange.setBody(messageContent);
 		 populateHeaders(headers,exchange);
 		 chenileEntryPoint.execute(exchange);
@@ -65,34 +68,42 @@ public class PubSubEntryPoint {
 	 */
 	private ChenileExchange makeExchange(String topic) {
 		ChenileExchange exchange = new ChenileExchange();
-		 int index = topic.lastIndexOf("_");
-		 if (index == -1){
-			 throw new ServerException(UNSUPPORTED_TOPIC_FORMAT_FOR_OPERATION.getSubError(),
-					 new Object[]{topic});
-		 }
-		 String opName = topic.substring(index+1);
-		 String t = topic.substring(0,index);
-		 index = t.lastIndexOf("_");
-		if (index == -1){
-			throw new ServerException(UNSUPPORTED_TOPIC_FORMAT_FOR_SERVICE.getSubError(),
-					new Object[]{topic });
+
+// Find last delimiter (either "_" or "/")
+		int index = Math.max(topic.lastIndexOf("_"), topic.lastIndexOf("/"));
+		if (index == -1) {
+			throw new ServerException(UNSUPPORTED_TOPIC_FORMAT_FOR_OPERATION.getSubError(),
+					new Object[]{topic});
 		}
 
-		String serviceId = t.substring(index+1);
+		String opName = topic.substring(index + 1);
+		String t = topic.substring(0, index);
+
+		int serviceIndex = Math.max(t.lastIndexOf("_"), t.lastIndexOf("/"));
+		if (serviceIndex == -1) {
+			throw new ServerException(UNSUPPORTED_TOPIC_FORMAT_FOR_SERVICE.getSubError(),
+					new Object[]{topic});
+		}
+
+		String serviceId = t.substring(serviceIndex + 1);
 
 		ChenileServiceDefinition serviceDefinition = chenileConfiguration.getServices().get(serviceId);
-		 if (serviceDefinition == null){
-			 throw new ServerException(MISSING_SERVICE.getSubError(), new Object[] { topic, serviceId});
-		 }
-		 exchange.setServiceDefinition(serviceDefinition);
+		if (serviceDefinition == null) {
+			throw new ServerException(MISSING_SERVICE.getSubError(), new Object[]{topic, serviceId});
+		}
+
+		exchange.setServiceDefinition(serviceDefinition);
+
 		List<OperationDefinition> operations = serviceDefinition.getOperations();
-	    for(OperationDefinition od: operations){
+		for (OperationDefinition od : operations) {
 			if (od.getName().equals(opName)) {
 				exchange.setOperationDefinition(od);
 				return exchange;
 			}
 		}
+
 		throw new ServerException(MISSING_SERVICE_OPERATION.getSubError(),
-				new Object[]{ topic, serviceId, opName});
+				new Object[]{topic, serviceId, opName});
+
 	}
 }

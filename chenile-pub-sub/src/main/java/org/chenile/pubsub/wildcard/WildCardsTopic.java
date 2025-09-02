@@ -1,4 +1,11 @@
 package org.chenile.pubsub.wildcard;
 
-public interface WildCardService {
+import org.chenile.pubsub.model.ChenilePubSub;
+
+public interface WildCardsTopic {
+
+    void subscribeTo(String serviceId, ChenilePubSub chenilePubSub);
+
+    void globalTopic();
+
 }

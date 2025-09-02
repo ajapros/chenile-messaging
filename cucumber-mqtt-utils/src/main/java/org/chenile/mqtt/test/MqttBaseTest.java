@@ -24,7 +24,7 @@ public class MqttBaseTest {
 
     @DynamicPropertySource
     static void mqttProperties(DynamicPropertyRegistry registry){
-        registry.add("mqtt.connection.ServerURIs",HostProvider::getServerURI);
+        registry.add("pubsub.mqtt.connection.ServerURIs",HostProvider::getServerURI);
     }
 
 }
