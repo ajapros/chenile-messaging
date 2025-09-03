@@ -10,6 +10,7 @@
     </parent>
 
     <artifactId>chenile-pub-sub</artifactId>
+    <name>Chenile Pub Sub</name>
 
     <properties>
         <maven.compiler.source>17</maven.compiler.source>
