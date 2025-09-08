@@ -2,6 +2,8 @@ package org.chenile.pubsub.kafka.configuration;
 
 import jakarta.annotation.PostConstruct;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.kafka.common.header.Header;
+import org.apache.kafka.common.header.Headers;
 import org.chenile.core.event.EventProcessor;
 import org.chenile.core.model.ChenileConfiguration;
 import org.slf4j.Logger;
@@ -25,6 +27,9 @@ import org.springframework.stereotype.Component;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
+import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -115,9 +120,22 @@ public class CustomKafkaConsumer implements ApplicationListener<ApplicationReady
             this.eventProcessor = eventProcessor;
         }
 
-        public void handleMessage(ConsumerRecord<String, String> record) {
+        public void handleMessage(ConsumerRecord<String, Object> record) {
             logger.info("Processing message from topic '{}': {}", record.topic(), record.value());
-            eventProcessor.handleEvent(record.topic(), record.value());
+            Map<String, String> headers = headersToMap(record.headers());
+            eventProcessor.handleEvent(record.topic(), record.value(),headers);
+        }
+
+        static Map<String, String> headersToMap(Headers headers) {
+            Map<String, String> map = new HashMap<>();
+            for (Header header : headers) {
+                String key = header.key();
+                String value = header.value() != null
+                        ? new String(header.value(), StandardCharsets.UTF_8)
+                        : null;
+                map.put(key, value);
+            }
+            return map;
         }
     }
 }
