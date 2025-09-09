@@ -49,7 +49,6 @@ public class PubSubEntryPoint {
 					 + objectMapper.writeValueAsString(response));
 		 System.out.println("Received message " + messageContent + " and handled it. Response = "
 				 + objectMapper.writeValueAsString(response));
-
 	}
 
 	private void populateHeaders(Map<String,Object> headers, ChenileExchange exchange){
@@ -69,7 +68,7 @@ public class PubSubEntryPoint {
 	private ChenileExchange makeExchange(String topic) {
 		ChenileExchange exchange = new ChenileExchange();
 
-// Find last delimiter (either "_" or "/")
+		// Find last delimiter (either "_" or "/")
 		int index = Math.max(topic.lastIndexOf("_"), topic.lastIndexOf("/"));
 		if (index == -1) {
 			throw new ServerException(UNSUPPORTED_TOPIC_FORMAT_FOR_OPERATION.getSubError(),

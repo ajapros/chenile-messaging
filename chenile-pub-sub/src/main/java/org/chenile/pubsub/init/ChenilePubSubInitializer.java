@@ -32,17 +32,13 @@ public class ChenilePubSubInitializer implements InitializingBean {
     Logger logger = LoggerFactory.getLogger(ChenilePubSubInitializer.class);
     @Autowired
     ChenileConfiguration chenileConfiguration;
-
     @Autowired
     private PubSubEntryPoint pubSubEntryPoint;
 
     @Value("${pubsub.topic.separator}") private String separator;
 
-    @Autowired
-    ApplicationContext applicationContext;
-    @Autowired @Qualifier("pubSubConfig")
-    Map<String,String> pubSubConfig;
-
+    @Autowired ApplicationContext applicationContext;
+    @Autowired @Qualifier("pubSubConfig") Map<String,String> pubSubConfig;
     final boolean pubsubEnabled;
     final WildCardsTopic wildCardsTopic;
 
@@ -59,8 +55,8 @@ public class ChenilePubSubInitializer implements InitializingBean {
     @Order(900) // ensure that it is called after core/http got initialized first
     public void init() throws Exception {
         Map<String,Object> beans = applicationContext.getBeansWithAnnotation(ChenilePubSub.class);
-        List<String> topics = new ArrayList<>();
-        // register all of these beans as Mqtt beans
+        // List<String> topics = new ArrayList<>();
+        // register all of these beans as Chenile Pub Sub beans
         for(Map.Entry<String, Object> e: beans.entrySet()) {
             Object bean = e.getValue();
             ChenilePubSub chenilePubSub = bean.getClass().getAnnotation(ChenilePubSub.class);
@@ -84,21 +80,13 @@ public class ChenilePubSubInitializer implements InitializingBean {
             // subscribe to this topic and all the topics underneath it
             // subscribe to this topic and all the topics underneath it
             // We use a single level filter since all operations are supported under it
-            if(!pubsubEnabled) return; // don't subscribe to the topic if mqtt is not enabled.
+            if(!pubsubEnabled) return; // don't subscribe to the topic if pub sub is not enabled.
             // but we need to do the rest of the stuff. Otherwise, we cannot publish to the correct topic
             logger.info("Subscribing to topic " + subscribeTopic + "/+");
             wildCardsTopic.subscribeTo(subscribeTopic, chenilePubSub);
-
-
-//            IMqttToken token = mqttV5Client.subscribe(subscribeTopic + "/+", qos);
-//            token.waitForCompletion();
-
-
             logger.info("Subscribing to topic " + subscribeTopic );
-            topics.add("^"+subscribeTopic+"_.*");
-
+            // topics.add("^"+subscribeTopic+"_.*");
         }
-        //subscribeToDynamicTopic(topics);
     }
 
     /**
@@ -112,7 +100,7 @@ public class ChenilePubSubInitializer implements InitializingBean {
      */
     private void putAnnotationBackIntoServiceDefinition(String publishTopic,String subscribeTopic, int qos, String serviceId){
         ChenileServiceDefinition csd = chenileConfiguration.getServices().get(serviceId);
-        ChenilePubSub chenileMqtt = new ChenilePubSub(){
+        ChenilePubSub chenilePubSub = new ChenilePubSub(){
 
             @Override
             public Class<? extends Annotation> annotationType() {
@@ -134,11 +122,9 @@ public class ChenilePubSubInitializer implements InitializingBean {
                 return publishTopic;
             }
         };
-        csd.putExtensionAsAnnotation(ChenilePubSub.class,chenileMqtt);
+        csd.putExtensionAsAnnotation(ChenilePubSub.class,chenilePubSub);
     }
 
     @Override
-    public void afterPropertiesSet() throws Exception {
-
-    }
+    public void afterPropertiesSet() throws Exception {}
 }

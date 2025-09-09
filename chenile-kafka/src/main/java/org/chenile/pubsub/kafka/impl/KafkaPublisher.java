@@ -33,7 +33,6 @@ public class KafkaPublisher implements ChenilePub {
         this.kafkaTemplate = kafkaTemplate;
         this.pubSubInfoProvider = pubSubInfoProvider;
     }
-
     /**
      * Publishes a message to the given service's operation topic.
      *

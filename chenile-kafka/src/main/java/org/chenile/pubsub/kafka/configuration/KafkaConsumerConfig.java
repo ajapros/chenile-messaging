@@ -28,9 +28,7 @@ import static org.apache.kafka.clients.consumer.ConsumerConfig.GROUP_ID_CONFIG;
 @EnableKafka
 @Configuration
 public class KafkaConsumerConfig {
-
     private static final Logger logger = LoggerFactory.getLogger(KafkaConsumerConfig.class);
-
     @Value(value = "${spring.kafka.bootstrap-server}")
     private String bootstrapAddress;
 
@@ -54,22 +52,12 @@ public class KafkaConsumerConfig {
     }
 
     @Bean
-    public ConcurrentKafkaListenerContainerFactory<String, String>
-      kafkaListenerContainerFactory() {
-   
+    public ConcurrentKafkaListenerContainerFactory<String, String> kafkaListenerContainerFactory() {
         ConcurrentKafkaListenerContainerFactory<String, String> factory =
           new ConcurrentKafkaListenerContainerFactory<>();
         factory.setConsumerFactory(consumerFactory());
         return factory;
     }
-
-//    @KafkaListener(topicPattern = "^chenile_.*", groupId = "foo")
-//    public void listenGroupFoo1(@Payload String message, @Headers Map<String,Object> headers,
-//                                @Header(KafkaHeaders.RECEIVED_TOPIC) String topic) {
-//        System.out.println("Received Message in group #######: " + message);
-//        System.out.println(headers);
-//        messageArrived(topic,message,headers);
-//    }
 
    @KafkaListener(topics = ChenileKafkaConstants.CHENILE_GLOBAL_TOPIC, groupId = "foo1")
     public void listenGroupFoo2(@Payload String message, @Headers Map<String,Object> headers,

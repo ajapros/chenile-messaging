@@ -17,8 +17,7 @@ public class PubSubConfiguration {
 
     @Value("${mqtt.publish.base.topic:chenile}") String basePublishTopic;
     /**
-     * This is the base topic name that will pre-pended for all subscriptions. It can contain
-     * wild cards such as + in accordance with the MQ-TT subscription rules . (default: chenile)
+     * This is the base topic name that will pre-pended for all subscriptions. (default: chenile)
      */
     @Value("${mqtt.subscribe.base.topic:chenile}") private String baseSubscribeTopic;
     @Value("${pubsub.enabled:true}") private boolean mqttEnabled;
@@ -37,8 +36,8 @@ public class PubSubConfiguration {
     /**
      * A topic to service map.<br/>
      * This map is internally used to route a message that arrives at a topic to a service.<br/>
-     * This map is populated by the MqttInitializer during the initialization phase.<br/>
-     * It is used by the MqttEntryPoint during runtime to invoke the appropriate operation in a service<br/>
+     * This map is populated  during the initialization phase.<br/>
+     * It is used  during runtime to invoke the appropriate operation in a service<br/>
      * @return a configuration that maps a route to a service.
      *
      */

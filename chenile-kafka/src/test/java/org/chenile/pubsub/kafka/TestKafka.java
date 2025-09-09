@@ -32,8 +32,6 @@ public  class TestKafka extends KafkaBaseTest {
 	@Autowired private SharedData sharedData;
 
 
-
-
 	@Test @Order(1) public void testIfHeadersAndPayloadWork() throws Exception {
 		Payload payload = new Payload(5,8);
 		Map<String, Object> headers = new HashMap<>();
@@ -50,12 +48,9 @@ public  class TestKafka extends KafkaBaseTest {
 	}
 
 
-
-
 	@Test
 	@Order(2)
 	public void testEventHeadersAndPayloadWork() throws Exception {
-
 		sharedData.latch = new CountDownLatch(1);
 		Payload payload = new Payload(5,8);
 		Map<String, Object> headers = new HashMap<>();
