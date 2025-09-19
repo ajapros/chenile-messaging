@@ -48,13 +48,8 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>org.testcontainers</groupId>
-            <artifactId>testcontainers</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.testcontainers</groupId>
-            <artifactId>kafka</artifactId>
+            <groupId>org.chenile</groupId>
+            <artifactId>cucumber-mqtt-utils</artifactId>
             <scope>test</scope>
         </dependency>
 

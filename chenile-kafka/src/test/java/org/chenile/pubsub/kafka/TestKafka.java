@@ -1,6 +1,7 @@
 package org.chenile.pubsub.kafka;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.chenile.mqtt.test.KafkaBaseTest;
 import org.chenile.pubsub.ChenilePub;
 import org.chenile.pubsub.kafka.service.Payload;
 import org.junit.Assert;

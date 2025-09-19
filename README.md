@@ -28,3 +28,7 @@ Please see [Code Generation Repository](https://github.com/rajakolluru/chenile-g
 about the code generator.
 
 
+### FActory
+1. With support of deafult coing from props
+
+

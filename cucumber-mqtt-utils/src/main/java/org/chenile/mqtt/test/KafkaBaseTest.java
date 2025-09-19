@@ -1,4 +1,4 @@
-package org.chenile.pubsub.kafka;
+package org.chenile.mqtt.test;
 
 import org.junit.ClassRule;
 import org.springframework.test.context.DynamicPropertyRegistry;
@@ -19,6 +19,8 @@ public class KafkaBaseTest {
     static {
         if (!kafkaContainer.isRunning())
             kafkaContainer.start();
+        System.setProperty("spring.kafka.bootstrap-server",
+                kafkaContainer.getHost() + ":" + kafkaContainer.getFirstMappedPort());
     }
 
     static class HostProvider {
