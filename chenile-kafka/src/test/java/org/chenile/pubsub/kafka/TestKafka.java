@@ -21,6 +21,8 @@ import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import static org.springframework.test.annotation.DirtiesContext.ClassMode.BEFORE_EACH_TEST_METHOD;
+
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = SpringConfig.class)
