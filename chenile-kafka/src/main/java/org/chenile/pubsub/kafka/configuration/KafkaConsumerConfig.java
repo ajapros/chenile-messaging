@@ -32,6 +32,9 @@ public class KafkaConsumerConfig {
     @Value(value = "${spring.kafka.bootstrap-server}")
     private String bootstrapAddress;
 
+    @Value("${spring.kafka.consumer.interceptor:}") // default empty
+    private String interceptorClass;
+
     @Autowired
     private PubSubEntryPoint pubSubEntryPoint;
 
@@ -47,7 +50,11 @@ public class KafkaConsumerConfig {
         props.put(
           ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, 
           StringDeserializer.class);
-        props.put(GROUP_ID_CONFIG,"hello2");
+        props.put(GROUP_ID_CONFIG,"chenile_group");
+        props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
+        if (!interceptorClass.isEmpty()) {
+            props.put(ConsumerConfig.INTERCEPTOR_CLASSES_CONFIG, interceptorClass);
+        }
         return new DefaultKafkaConsumerFactory<>(props);
     }
 
