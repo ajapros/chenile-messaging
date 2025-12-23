@@ -1,5 +1,7 @@
 package org.chenile.mqtt.test;
 
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
@@ -8,13 +10,24 @@ import org.testcontainers.utility.DockerImageName;
 
 public class MqttBaseTest {
 
-    @ClassRule
-    public static HiveMQContainer hivemq
-            = new HiveMQContainer(DockerImageName.parse("hivemq/hivemq-ce:latest"));
-    static {
+    private static HiveMQContainer hivemq;
+
+    @BeforeClass
+    public static void startContainer() {
+        hivemq = new HiveMQContainer(
+                DockerImageName.parse("hivemq/hivemq-ce:latest")
+        );
         if (!hivemq.isRunning())
             hivemq.start();
     }
+
+    @AfterClass
+    public static void stopContainer() {
+        if (hivemq != null) {
+            hivemq.stop();
+        }
+    };
+
 
     static class HostProvider {
         public static String getServerURI() {

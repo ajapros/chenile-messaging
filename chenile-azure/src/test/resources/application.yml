@@ -1,0 +1,20 @@
+logging:
+  level:
+    ROOT: INFO
+    org.hibernate.SQL: INFO
+
+spring:
+  kafka:
+    listener:
+      missing-topics-fatal: false
+    consumer:
+      auto-offset-reset: earliest
+      enable-auto-commit: true
+
+pubsub:
+  topic:
+    separator: "_"
+  clientID: someClient
+  enabled: true
+
+
