@@ -1,6 +1,6 @@
-package org.chenile.pubsub.kafka.service;
+package org.chenile.pubsub.azure.service;
 
-import org.chenile.pubsub.kafka.SharedData;
+import org.chenile.pubsub.azure.SharedData;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**

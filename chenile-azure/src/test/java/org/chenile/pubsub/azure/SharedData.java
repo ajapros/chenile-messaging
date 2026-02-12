@@ -1,4 +1,4 @@
-package org.chenile.pubsub.kafka;
+package org.chenile.pubsub.azure;
 
 import java.util.concurrent.CountDownLatch;
 

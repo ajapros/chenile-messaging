@@ -1,4 +1,4 @@
-package org.chenile.pubsub.kafka.service;
+package org.chenile.pubsub.azure.service;
 
 public class Payload {
     public int num1;

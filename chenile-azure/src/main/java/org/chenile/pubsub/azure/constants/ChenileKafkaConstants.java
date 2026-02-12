@@ -1,4 +1,4 @@
-package org.chenile.pubsub.kafka.constants;
+package org.chenile.pubsub.azure.constants;
 
 public interface ChenileKafkaConstants {
     String CHENILE_GLOBAL_TOPIC = "chenile_global_service";

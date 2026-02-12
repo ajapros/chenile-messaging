@@ -3,13 +3,39 @@ logging:
     ROOT: INFO
     org.hibernate.SQL: INFO
 
+
+
 spring:
-  kafka:
-    listener:
-      missing-topics-fatal: false
-    consumer:
-      auto-offset-reset: earliest
-      enable-auto-commit: true
+  chenile:
+    azure:
+      eventhubs:
+        transport-type: AMQP_WEB_SOCKETS
+        namespace: sb://localhost/;
+        connection-string: "Endpoint=sb://localhost;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=SAS_KEY_VALUE;UseDevelopmentEmulator=true;"
+        auto-start-consumers: false
+        consumers:
+          hubs:
+            chenile:
+              consumer-group: "eh1consumer"
+            eh2:
+              consumer-group: "eh2consumer"
+        producers:
+          - chenile
+          - eh2
+
+
+
+    storage:
+      blob:
+        endpoint: "http://localhost:10000/devstoreaccount1"
+        container: "chenilequeue"
+        credential-type: "key"   # options: "key" or "sas"
+
+        # For Shared Key
+        account-name: "devstoreaccount1"
+        account-key: "Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw=="
+
+
 
 pubsub:
   topic:

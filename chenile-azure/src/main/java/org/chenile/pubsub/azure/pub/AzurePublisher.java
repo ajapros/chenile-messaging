@@ -1,36 +1,31 @@
-package org.chenile.pubsub.kafka.impl;
+package org.chenile.pubsub.azure.pub;
 
-import org.apache.kafka.clients.producer.ProducerRecord;
-import org.apache.kafka.common.header.Header;
-import org.apache.kafka.common.header.internals.RecordHeader;
+import com.azure.messaging.eventhubs.EventData;
+import com.azure.messaging.eventhubs.EventDataBatch;
+import com.azure.messaging.eventhubs.EventHubProducerClient;
+import com.azure.messaging.eventhubs.models.CreateBatchOptions;
 import org.chenile.base.exception.ServerException;
 import org.chenile.pubsub.ChenilePub;
 import org.chenile.pubsub.errorcodes.ErrorCodes;
 import org.chenile.pubsub.model.ChenilePubSub;
 import org.chenile.pubsub.provider.PubSubInfoProvider;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.kafka.core.KafkaTemplate;
+import java.util.*;
 
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
-import static org.chenile.pubsub.kafka.constants.ChenileKafkaConstants.*;
+import static org.chenile.pubsub.azure.constants.ChenileKafkaConstants.*;
 
 /**
- * Kafka-based implementation of the {@link ChenilePub} interface.
- * Provides methods to publish messages to Kafka topics synchronously or asynchronously.
+ * Azure-based implementation of the {@link ChenilePub} interface.
+ * Provides methods to publish messages to Azure hub topics synchronously or asynchronously.
  */
-public class KafkaPublisher implements ChenilePub {
+public class AzurePublisher implements ChenilePub {
 
-    private final KafkaTemplate<String, String> kafkaTemplate;
     private final PubSubInfoProvider pubSubInfoProvider;
 
     @Autowired
-    public KafkaPublisher(KafkaTemplate<String, String> kafkaTemplate,
-                          PubSubInfoProvider pubSubInfoProvider) {
-        this.kafkaTemplate = kafkaTemplate;
+    private Map<String, EventHubProducerClient> producerClients;
+
+    public AzurePublisher(PubSubInfoProvider pubSubInfoProvider) {
         this.pubSubInfoProvider = pubSubInfoProvider;
     }
     /**
@@ -66,15 +61,26 @@ public class KafkaPublisher implements ChenilePub {
      */
     @Override
     public void asyncPublish(String topic, String payload, Map<String, Object> properties) {
-        ProducerRecord<String, String> record = new ProducerRecord<>(
-                topic,
-                getPartition(properties),
-                "message",
-                payload,
-                buildHeaders(topic, properties)
-        );
 
-        kafkaTemplate.send(record);
+        sendMessage(topic, payload, properties);
+    }
+
+    private void sendMessage(String topic, String payload, Map<String, Object> properties) {
+        EventData eventData = new EventData(payload);
+        eventData.getProperties().putAll(buildHeaders(topic, properties));
+
+        CreateBatchOptions createBatchOptions = new CreateBatchOptions();
+        createBatchOptions.setPartitionId(getPartition(properties));
+
+        EventDataBatch batch = producerClients.get(topic).createBatch(createBatchOptions);
+
+        if (!batch.tryAdd(eventData)) {
+            throw new IllegalStateException("Event is too large for batch");
+        }
+
+        producerClients.get(topic).send(batch);
+
+        //eventHubProducerClient.send(batch);
     }
 
     /**
@@ -86,15 +92,8 @@ public class KafkaPublisher implements ChenilePub {
      */
     @Override
     public void publish(String topic, String payload, Map<String, Object> properties) {
-        ProducerRecord<String, String> record = new ProducerRecord<>(
-                CHENILE_GLOBAL_TOPIC,
-                getPartition(properties),
-                "message",
-                payload,
-                buildHeaders(topic, properties)
-        );
+        sendMessage(topic, payload, properties);
 
-        kafkaTemplate.send(record);
     }
 
     /**
@@ -104,23 +103,11 @@ public class KafkaPublisher implements ChenilePub {
      * @param properties message properties
      * @return list of Kafka headers
      */
-    private static List<Header> buildHeaders(String topic, Map<String, Object> properties) {
-        List<Header> headers = new ArrayList<>();
-        if (properties != null) {
-            for (Map.Entry<String, Object> entry : properties.entrySet()) {
-                if (entry.getValue() != null) {
-                    headers.add(new RecordHeader(
-                            entry.getKey(),
-                            String.valueOf(entry.getValue()).getBytes(StandardCharsets.UTF_8))
-                    );
-                }
-            }
-        }
-        headers.add(new RecordHeader(
-                CHENILE_TOPIC_KEY,
-                topic.getBytes(StandardCharsets.UTF_8))
-        );
-        return headers;
+    private static Map<String, Object> buildHeaders(String topic, Map<String, Object> properties) {
+
+        properties.put(CHENILE_TOPIC_KEY,topic);
+
+        return properties;
     }
 
     /**
@@ -147,18 +134,18 @@ public class KafkaPublisher implements ChenilePub {
      * @param properties the message properties
      * @return the partition number (default = 0)
      */
-    private static Integer getPartition(Map<String, Object> properties) {
+    private static String getPartition(Map<String, Object> properties) {
         if (properties == null) {
-            return 0;
+            return String.valueOf(0);
         }
         Object partitionObj = properties.get(CHENILE_KAFKA_PARTITION_KEY);
         if (partitionObj == null) {
-            return 0;
+            return String.valueOf(0);
         }
         try {
-            return Integer.parseInt(partitionObj.toString());
+            return String.valueOf(Integer.parseInt(partitionObj.toString()));
         } catch (NumberFormatException e) {
-            return 0; // fallback to default
+            return String.valueOf(0); // fallback to default
         }
     }
 }

@@ -1,0 +1,39 @@
+{
+  "UserConfig": {
+    "NamespaceConfig": [
+      {
+        "Type": "EventHub",
+        "Name": "chenile",
+        "Entities": [
+          {
+            "Name": "chenile",
+            "PartitionCount": "2",
+            "ConsumerGroups": [
+              {
+                "Name": "eh1consumer"
+              },
+              {
+                "Name": "dead_letter"
+              }
+            ]
+          },
+          {
+            "Name": "eh2",
+            "PartitionCount": "2",
+            "ConsumerGroups": [
+              {
+                "Name": "eh2consumer"
+              },
+              {
+                "Name": "dead_letter"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "LoggingConfig": {
+      "Type": "File"
+    }
+  }
+}
