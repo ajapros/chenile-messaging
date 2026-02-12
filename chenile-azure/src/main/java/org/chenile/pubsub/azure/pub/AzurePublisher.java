@@ -66,6 +66,14 @@ public class AzurePublisher implements ChenilePub {
     }
 
     private void sendMessage(String topic, String payload, Map<String, Object> properties) {
+        // Check if the producer client for the topic exists
+        if (!producerClients.containsKey(topic) || producerClients.get(topic) == null) {
+            throw new IllegalStateException(
+                    "Azure Event Hub client for topic '" + topic + "' is not registered. " +
+                            "Please add it to the configuration and ensure it is available in the cloud."
+            );
+        }
+
         EventData eventData = new EventData(payload);
         eventData.getProperties().putAll(buildHeaders(topic, properties));
 
@@ -79,9 +87,8 @@ public class AzurePublisher implements ChenilePub {
         }
 
         producerClients.get(topic).send(batch);
-
-        //eventHubProducerClient.send(batch);
     }
+
 
     /**
      * Publishes a message to the global Kafka topic.

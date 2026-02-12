@@ -1,7 +1,5 @@
 package org.chenile.pubsub.azure;
 
-import com.azure.messaging.eventhubs.EventHubProducerClient;
-import com.azure.messaging.eventhubs.EventProcessorClient;
 import com.azure.storage.blob.BlobContainerClient;
 import com.azure.storage.blob.BlobContainerClientBuilder;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -29,9 +27,6 @@ public class TestEventHubIntegration extends BaseComposeContainer{
 
     @Autowired
     private   SharedData sharedData;
-
-
-
 
     @BeforeAll
     public static void createContainer() {
@@ -71,6 +66,25 @@ public class TestEventHubIntegration extends BaseComposeContainer{
 
         System.out.println("All Done!!!!");
 
-
     }
+
+    @Test
+    void testEventHubUnknownTopic() throws JsonProcessingException {
+        Payload payload = new Payload(5, 8);
+        Map<String, Object> headers = new HashMap<>();
+        headers.put("num3", 10);
+        String s = new ObjectMapper().writeValueAsString(payload);
+
+        // Assert that sending to an unknown topic throws IllegalStateException
+        IllegalStateException exception = Assertions.assertThrows(IllegalStateException.class, () -> {
+            chenilePub.asyncPublish("unknown", s, headers);
+        });
+
+        // Optionally, assert the exception message
+        Assertions.assertTrue(exception.getMessage().contains("Azure Event Hub client for topic 'unknown' is not registered"));
+
+        // If sharedData.sum should not be changed in this case, assert it
+        Assertions.assertEquals(0, sharedData.sum); // or whatever the expected default is
+    }
+
 }
