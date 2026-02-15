@@ -18,7 +18,7 @@ public class EventHubConsumerStarter {
     private final boolean autoStart;
 
     public EventHubConsumerStarter(Map<String, EventProcessorClient> consumerProcessors,
-                                   EventHubProperties eventHubProperties) {
+                                   ChenileEventHubProperties eventHubProperties) {
         this.consumerProcessors = consumerProcessors;
         this.autoStart = eventHubProperties.isAutoStartConsumers();
     }

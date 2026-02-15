@@ -2,11 +2,19 @@ package org.chenile.pubsub.azure.sub;
 
 
 import com.azure.messaging.eventhubs.models.EventContext;
+import org.chenile.core.context.ChenileExchange;
+import org.chenile.core.context.ContextContainer;
 import org.chenile.core.event.EventProcessor;
+import org.chenile.pubsub.ChenilePub;
+import org.chenile.pubsub.azure.configuration.ChenileEventHubProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.InitializingBean;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
@@ -21,8 +29,15 @@ public class AzureEventHubSubscriber implements Consumer<EventContext>, Initiali
 
     private final EventProcessor eventProcessor;
 
-    public AzureEventHubSubscriber(EventProcessor eventProcessor) {
+    private final ChenilePub chenilePub;
+
+    private final ChenileEventHubProperties chenileEventHubProperties;
+
+    public AzureEventHubSubscriber(EventProcessor eventProcessor, ChenilePub chenilePub,
+                                   ChenileEventHubProperties chenileEventHubProperties) {
         this.eventProcessor = eventProcessor;
+        this.chenilePub = chenilePub;
+        this.chenileEventHubProperties = chenileEventHubProperties;
     }
 
     @Override
@@ -41,15 +56,25 @@ public class AzureEventHubSubscriber implements Consumer<EventContext>, Initiali
         String topic = propertiesMap.get(CHENILE_TOPIC_KEY);
 
         try {
-            eventProcessor.handleEvent(topic, body, propertiesMap);
+            List<ChenileExchange> resList = eventProcessor.handleEvent(topic, body, propertiesMap);
 
+            for(ChenileExchange res:resList){
+                if(res.getException()!=null){
+                    Map<String, Object> props =
+                            new HashMap<>(eventContext.getEventData().getProperties());
+
+                    props.put("e",res.getException().getMessage());
+                    chenilePub.asyncPublish(chenileEventHubProperties.getDl(),body,props);
+                }
+            }
             // Update checkpoint after successful processing
-            eventContext.updateCheckpoint();
             LOGGER.info("Checkpoint updated for partition {}", eventContext.getPartitionContext().getPartitionId());
         } catch (Exception e) {
             LOGGER.error("Error processing event: {}", body, e);
             // Decide whether to retry, dead-letter, or propagate
             throw new RuntimeException(e);
+        }finally {
+            eventContext.updateCheckpoint();
         }
     }
 

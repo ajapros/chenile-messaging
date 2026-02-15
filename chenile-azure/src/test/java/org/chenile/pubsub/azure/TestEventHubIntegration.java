@@ -45,7 +45,7 @@ public class TestEventHubIntegration extends BaseComposeContainer{
     void testEventHubClient() throws InterruptedException, JsonProcessingException {
 
         Thread.sleep(5000);
-
+        sharedData.reset();
         eventHubConsumerStarter.startConsumersManually();
         System.out.println("EventHub started!");
 
@@ -85,6 +85,33 @@ public class TestEventHubIntegration extends BaseComposeContainer{
 
         // If sharedData.sum should not be changed in this case, assert it
         Assertions.assertEquals(0, sharedData.sum); // or whatever the expected default is
+    }
+
+    @Test
+    void testEventHubClientWithException() throws InterruptedException, JsonProcessingException {
+
+        Thread.sleep(5000);
+        sharedData.reset();
+        eventHubConsumerStarter.startConsumersManually();
+        System.out.println("EventHub started!");
+
+        System.out.println(sharedData.latch.getCount());
+
+        Thread.sleep(2000);
+
+        Payload payload = new Payload(-1,-2);
+        Map<String, Object> headers = new HashMap<>();
+        headers.put("num3",10);
+        String s = new ObjectMapper().writeValueAsString(payload);
+        chenilePub.asyncPublish("chenile",s,headers);
+        System.out.println("Message sent to Event Hub: " + s);
+
+        sharedData.latch.await();
+
+        //Assertions.assertEquals(15,sharedData.sum);
+
+        System.out.println("All Done!!!!");
+
     }
 
 }

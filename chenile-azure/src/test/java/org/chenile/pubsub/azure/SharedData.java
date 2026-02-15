@@ -10,4 +10,9 @@ import java.util.concurrent.CountDownLatch;
 public class SharedData {
     public CountDownLatch latch = new CountDownLatch(1);
     public int sum; // this will be updated with the computed sum by the test class.
+
+    public void reset(){
+        this.latch = new CountDownLatch(1);
+        sum =0;
+    }
 }

@@ -20,24 +20,6 @@ public class AzureStorageChenileConfiguration {
     @Value("${spring.chenile.storage.blob.container}")
     private String storageBlobContainer;
 
-//    @Bean
-//    BlobContainerClientBuilder blobContainerClientBuilder() {
-//
-//        String accountName = "devstoreaccount1";
-//        String accountKey = "Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==";
-//
-//        StorageSharedKeyCredential credential =
-//                new StorageSharedKeyCredential(accountName, accountKey);
-//
-//        AzureSasCredential sasCredential =
-//                new AzureSasCredential("?sv=2024-11-04&ss=bfqt&srt=sco&sp=rwdlacupiytfx&se=2026-05-31T13:15:37Z&st=2026-02-09T05:00:37Z&spr=https,http&sig=nlBT9DLuGoXtyywdsY2ZCR1gPMbdeX3%2Bs%2F8beo%2FUcQw%3D");
-//
-//
-//        return new BlobContainerClientBuilder().credential(credential)
-//                .endpoint(storageBlobEndpoint)
-//                .containerName(storageBlobContainer);
-//    }
-
     @Bean
     public BlobContainerClientBuilder blobContainerClientBuilder(BlobStorageProperties properties) {
 

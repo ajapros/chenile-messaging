@@ -23,7 +23,7 @@ public class EventHubStaticMappingConfiguration {
     private static final Logger LOGGER = LoggerFactory.getLogger(EventHubStaticMappingConfiguration.class);
 
     @Autowired
-    private EventHubProperties eventHubProperties;
+    private ChenileEventHubProperties eventHubProperties;
 
     @Autowired
     private BlobContainerAsyncClient blobContainerAsyncClient;

@@ -10,9 +10,11 @@ import java.util.Map;
 
 @Component
 @ConfigurationProperties(prefix = "spring.chenile.azure.eventhubs")
-public class EventHubProperties {
+public class ChenileEventHubProperties {
 
     private String connectionString;
+
+    private String dl;
 
     private List<String> producers = new ArrayList<>();
 
@@ -51,5 +53,13 @@ public class EventHubProperties {
 
     public boolean isAutoStartConsumers() {
         return autoStartConsumers;
+    }
+
+    public String getDl() {
+        return dl;
+    }
+
+    public void setDl(String dl) {
+        this.dl = dl;
     }
 }

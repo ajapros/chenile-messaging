@@ -31,4 +31,11 @@ public class TestController extends ControllerSupport{
 		return process("f1",request,payload);
 	}
 
+	@PostMapping("/dl")
+	@EventsSubscribedTo({"eh2"})
+	ResponseEntity<GenericResponse<Map<String, Object>>> dlHandler(HttpServletRequest request,
+															@RequestBody Payload payload){
+		return process("dlHandler",request,payload);
+	}
+
 }

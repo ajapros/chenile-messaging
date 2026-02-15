@@ -22,6 +22,9 @@ spring:
         producers:
           - chenile
           - eh2
+        dl:
+          eh2
+
 
 
 

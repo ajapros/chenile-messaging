@@ -1,7 +1,10 @@
 package org.chenile.pubsub.azure.configuration;
 
 import com.azure.messaging.eventhubs.EventHubProducerClient;
+import org.chenile.core.context.ChenileExchange;
+import org.chenile.core.context.ContextContainer;
 import org.chenile.core.event.EventProcessor;
+import org.chenile.pubsub.ChenilePub;
 import org.chenile.pubsub.azure.pub.AzurePublisher;
 import org.chenile.pubsub.azure.sub.AzureEventHubSubscriber;
 import org.chenile.pubsub.model.ChenilePubSub;
@@ -21,8 +24,9 @@ public class AzurePubSubConfiguration {
     }
 
     @Bean
-    AzureEventHubSubscriber azureEventHubSubscriber(EventProcessor eventProcessor){
-        return new AzureEventHubSubscriber(eventProcessor);
+    AzureEventHubSubscriber azureEventHubSubscriber(EventProcessor eventProcessor,
+                                                    ChenilePub chenilePub, ChenileEventHubProperties chenileEventHubProperties){
+        return new AzureEventHubSubscriber(eventProcessor,chenilePub,chenileEventHubProperties );
     }
 
 
