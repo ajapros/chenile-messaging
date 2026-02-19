@@ -18,6 +18,10 @@ public class ChenileEventHubProperties {
 
     private List<String> producers = new ArrayList<>();
 
+    private List<String> clients = new ArrayList<>();
+
+    private String clientPrefixSeparator = "_";
+
     private Consumers consumers = new Consumers();
 
     /** Flag to control automatic consumer start */
@@ -43,6 +47,12 @@ public class ChenileEventHubProperties {
 
     public List<String> getProducers() { return producers; }
     public void setProducers(List<String> producers) { this.producers = producers; }
+
+    public List<String> getClients() { return clients; }
+    public void setClients(List<String> clients) { this.clients = clients; }
+
+    public String getClientPrefixSeparator() { return clientPrefixSeparator; }
+    public void setClientPrefixSeparator(String clientPrefixSeparator) { this.clientPrefixSeparator = clientPrefixSeparator; }
 
     public Consumers getConsumers() { return consumers; }
     public void setConsumers(Consumers consumers) { this.consumers = consumers; }

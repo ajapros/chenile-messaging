@@ -19,8 +19,9 @@ public class AzurePubSubConfiguration {
 
 
     @Bean
-    public AzurePublisher azurePublisher(PubSubInfoProvider pubSubInfoProvider) {
-        return new AzurePublisher(pubSubInfoProvider);
+    public AzurePublisher azurePublisher(PubSubInfoProvider pubSubInfoProvider,
+                                         ChenileEventHubProperties chenileEventHubProperties) {
+        return new AzurePublisher(pubSubInfoProvider, chenileEventHubProperties);
     }
 
     @Bean

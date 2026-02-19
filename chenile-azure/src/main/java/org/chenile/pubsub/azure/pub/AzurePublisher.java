@@ -6,6 +6,8 @@ import com.azure.messaging.eventhubs.EventHubProducerClient;
 import com.azure.messaging.eventhubs.models.CreateBatchOptions;
 import org.chenile.base.exception.ServerException;
 import org.chenile.pubsub.ChenilePub;
+import org.chenile.pubsub.azure.configuration.ChenileEventHubProperties;
+import org.chenile.pubsub.azure.util.EventHubNameUtils;
 import org.chenile.pubsub.errorcodes.ErrorCodes;
 import org.chenile.pubsub.model.ChenilePubSub;
 import org.chenile.pubsub.provider.PubSubInfoProvider;
@@ -21,12 +23,15 @@ import static org.chenile.pubsub.azure.constants.ChenileKafkaConstants.*;
 public class AzurePublisher implements ChenilePub {
 
     private final PubSubInfoProvider pubSubInfoProvider;
+    private final ChenileEventHubProperties chenileEventHubProperties;
 
     @Autowired
     private Map<String, EventHubProducerClient> producerClients;
 
-    public AzurePublisher(PubSubInfoProvider pubSubInfoProvider) {
+    public AzurePublisher(PubSubInfoProvider pubSubInfoProvider,
+                          ChenileEventHubProperties chenileEventHubProperties) {
         this.pubSubInfoProvider = pubSubInfoProvider;
+        this.chenileEventHubProperties = chenileEventHubProperties;
     }
     /**
      * Publishes a message to the given service's operation topic.
@@ -66,10 +71,16 @@ public class AzurePublisher implements ChenilePub {
     }
 
     private void sendMessage(String topic, String payload, Map<String, Object> properties) {
+        String resolvedTopic = EventHubNameUtils.resolveHubName(
+                topic,
+                properties,
+                chenileEventHubProperties.getClients(),
+                chenileEventHubProperties.getClientPrefixSeparator()
+        );
         // Check if the producer client for the topic exists
-        if (!producerClients.containsKey(topic) || producerClients.get(topic) == null) {
+        if (!producerClients.containsKey(resolvedTopic) || producerClients.get(resolvedTopic) == null) {
             throw new IllegalStateException(
-                    "Azure Event Hub client for topic '" + topic + "' is not registered. " +
+                    "Azure Event Hub client for topic '" + resolvedTopic + "' is not registered. " +
                             "Please add it to the configuration and ensure it is available in the cloud."
             );
         }
@@ -80,13 +91,13 @@ public class AzurePublisher implements ChenilePub {
         CreateBatchOptions createBatchOptions = new CreateBatchOptions();
         createBatchOptions.setPartitionId(getPartition(properties));
 
-        EventDataBatch batch = producerClients.get(topic).createBatch(createBatchOptions);
+        EventDataBatch batch = producerClients.get(resolvedTopic).createBatch(createBatchOptions);
 
         if (!batch.tryAdd(eventData)) {
             throw new IllegalStateException("Event is too large for batch");
         }
 
-        producerClients.get(topic).send(batch);
+        producerClients.get(resolvedTopic).send(batch);
     }
 
 

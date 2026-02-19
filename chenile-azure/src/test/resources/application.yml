@@ -22,6 +22,10 @@ spring:
         producers:
           - chenile
           - eh2
+        clients:
+          - acme
+          - beta
+        client-prefix-separator: "-"
         dl:
           eh2
 
@@ -45,5 +49,3 @@ pubsub:
     separator: "_"
   clientID: someClient
   enabled: true
-
-

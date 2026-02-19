@@ -18,7 +18,55 @@
             ]
           },
           {
+            "Name": "acme-chenile",
+            "PartitionCount": "2",
+            "ConsumerGroups": [
+              {
+                "Name": "eh1consumer"
+              },
+              {
+                "Name": "dead_letter"
+              }
+            ]
+          },
+          {
             "Name": "eh2",
+            "PartitionCount": "2",
+            "ConsumerGroups": [
+              {
+                "Name": "eh2consumer"
+              },
+              {
+                "Name": "dead_letter"
+              }
+            ]
+          },
+          {
+            "Name": "acme-eh2",
+            "PartitionCount": "2",
+            "ConsumerGroups": [
+              {
+                "Name": "eh2consumer"
+              },
+              {
+                "Name": "dead_letter"
+              }
+            ]
+          },
+          {
+            "Name": "beta-chenile",
+            "PartitionCount": "2",
+            "ConsumerGroups": [
+              {
+                "Name": "eh1consumer"
+              },
+              {
+                "Name": "dead_letter"
+              }
+            ]
+          },
+          {
+            "Name": "beta-eh2",
             "PartitionCount": "2",
             "ConsumerGroups": [
               {
