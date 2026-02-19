@@ -14,6 +14,7 @@
         <module>cloud-edge-switch</module>
         <module>chenile-kafka</module>
         <module>chenile-azure</module>
+        <module>chenile-jvm-pub-sub</module>
     </modules>
 
     <packaging>pom</packaging>

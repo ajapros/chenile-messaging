@@ -1,0 +1,16 @@
+logging:
+  level:
+    ROOT: INFO
+
+pubsub:
+  topic:
+    separator: "_"
+  enabled: true
+
+mqtt:
+  publish:
+    base:
+      topic: chenile
+  subscribe:
+    base:
+      topic: chenile
