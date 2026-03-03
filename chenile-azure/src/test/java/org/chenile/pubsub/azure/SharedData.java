@@ -1,5 +1,7 @@
 package org.chenile.pubsub.azure;
 
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 
 /**
@@ -10,9 +12,15 @@ import java.util.concurrent.CountDownLatch;
 public class SharedData {
     public CountDownLatch latch = new CountDownLatch(1);
     public int sum; // this will be updated with the computed sum by the test class.
+    public final List<String> tenantsSeen = new CopyOnWriteArrayList<>();
 
     public void reset(){
         this.latch = new CountDownLatch(1);
         sum =0;
+        tenantsSeen.clear();
+    }
+
+    public void addTenant(String tenant) {
+        tenantsSeen.add(tenant);
     }
 }

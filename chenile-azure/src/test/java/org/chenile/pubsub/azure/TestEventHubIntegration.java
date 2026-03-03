@@ -143,5 +143,6 @@ public class TestEventHubIntegration extends BaseComposeContainer{
 
         Assertions.assertTrue(sharedData.latch.await(30, TimeUnit.SECONDS));
         Assertions.assertEquals(expectedSum, sharedData.sum);
+        Assertions.assertEquals(tenant, sharedData.tenantsSeen.getFirst());
     }
 }

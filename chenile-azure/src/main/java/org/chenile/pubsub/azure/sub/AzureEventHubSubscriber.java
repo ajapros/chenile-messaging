@@ -4,6 +4,7 @@ package org.chenile.pubsub.azure.sub;
 import com.azure.messaging.eventhubs.models.EventContext;
 import org.chenile.core.context.ChenileExchange;
 import org.chenile.core.context.ContextContainer;
+import org.chenile.core.context.HeaderUtils;
 import org.chenile.core.event.EventProcessor;
 import org.chenile.pubsub.ChenilePub;
 import org.chenile.pubsub.azure.configuration.ChenileEventHubProperties;
@@ -56,7 +57,7 @@ public class AzureEventHubSubscriber implements Consumer<EventContext>, Initiali
         String topic = propertiesMap.get(CHENILE_TOPIC_KEY);
 
         try {
-            List<ChenileExchange> resList = eventProcessor.handleEvent(topic, body, propertiesMap);
+            List<ChenileExchange> resList = processWithTenantContext(topic, body, propertiesMap);
 
             for(ChenileExchange res:resList){
                 if(res.getException()!=null){
@@ -86,6 +87,21 @@ public class AzureEventHubSubscriber implements Consumer<EventContext>, Initiali
                         Map.Entry::getKey,
                         e -> String.valueOf(e.getValue()) // handles null safely
                 ));
+    }
+
+    List<ChenileExchange> processWithTenantContext(String topic, String body, Map<String, String> propertiesMap) {
+        ContextContainer contextContainer = ContextContainer.getInstance();
+        String previousTenant = contextContainer.getTenant();
+        String tenant = propertiesMap.get(HeaderUtils.TENANT_ID_KEY);
+        if (tenant != null && tenant.isBlank()) {
+            tenant = null;
+        }
+        try {
+            contextContainer.setTenant(tenant);
+            return eventProcessor.handleEvent(topic, body, propertiesMap);
+        } finally {
+            contextContainer.setTenant(previousTenant);
+        }
     }
 
     @Override

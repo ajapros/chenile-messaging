@@ -1,5 +1,6 @@
 package org.chenile.pubsub.azure.service;
 
+import org.chenile.core.context.ContextContainer;
 import org.chenile.pubsub.azure.SharedData;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -17,6 +18,7 @@ public class TestServiceImpl implements TestService {
 	public int f(int num3, Payload payload) {
 		int sum = payload.num1 + payload.num2 + num3;
 		sharedData.sum = sum;
+		sharedData.addTenant(ContextContainer.getInstance().getTenant());
 		sharedData.latch.countDown();
 		return sum;
 	}
@@ -29,6 +31,7 @@ public class TestServiceImpl implements TestService {
 		}
 		int sum = payload.num1 + payload.num2 + 2;
 		sharedData.sum = sum;
+		sharedData.addTenant(ContextContainer.getInstance().getTenant());
 		sharedData.latch.countDown();
 		return sum;
 	}
