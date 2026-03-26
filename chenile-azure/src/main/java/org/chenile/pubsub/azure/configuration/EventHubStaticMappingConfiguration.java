@@ -38,7 +38,7 @@ public class EventHubStaticMappingConfiguration {
     public Map<String, EventHubProducerClient> producerClients() {
         Map<String, EventHubProducerClient> producers = new HashMap<>();
         EventHubNameUtils.expandHubNames(
-                eventHubProperties.getProducers(),
+                eventHubProperties.getResolvedProducerHubs(),
                 eventHubProperties.getClients(),
                 eventHubProperties.getClientPrefixSeparator()
         ).forEach((hubName) -> {
@@ -63,7 +63,7 @@ public class EventHubStaticMappingConfiguration {
         List<String> clients = eventHubProperties.getClients();
         String separator = eventHubProperties.getClientPrefixSeparator();
 
-        eventHubProperties.getConsumers().getHubs().forEach((hubName, hubConfig) -> {
+        eventHubProperties.getResolvedConsumerHubs().forEach((hubName, hubConfig) -> {
             EventHubNameUtils.expandHubNames(
                     List.of(hubName),
                     clients,

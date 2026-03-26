@@ -17,9 +17,7 @@ public class TestServiceImpl implements TestService {
 	@Override
 	public int f(int num3, Payload payload) {
 		int sum = payload.num1 + payload.num2 + num3;
-		sharedData.sum = sum;
-		sharedData.addTenant(ContextContainer.getInstance().getTenant());
-		sharedData.latch.countDown();
+		record("f", sum);
 		return sum;
 	}
 
@@ -30,16 +28,45 @@ public class TestServiceImpl implements TestService {
 			throw new RuntimeException("Test for exception");
 		}
 		int sum = payload.num1 + payload.num2 + 2;
-		sharedData.sum = sum;
-		sharedData.addTenant(ContextContainer.getInstance().getTenant());
-		sharedData.latch.countDown();
+		record("f1", sum);
+		return sum;
+	}
+
+	@Override
+	public int orderEvent(Payload payload) {
+		int sum = payload.num1 + payload.num2 + 100;
+		record("orderEvent", sum);
+		return sum;
+	}
+
+	@Override
+	public int invoicePaid(Payload payload) {
+		int sum = payload.num1 + payload.num2 + 200;
+		record("invoicePaid", sum);
+		return sum;
+	}
+
+	@Override
+	public int auditEvent(Payload payload) {
+		int sum = payload.num1 + payload.num2 + 300;
+		record("auditEvent", sum);
 		return sum;
 	}
 
 	@Override
 	public int dlHandler(Payload payload) {
 		System.out.println("I am DL handler!!");
+		sharedData.addHandler("dlHandler");
 		sharedData.latch.countDown();
 		return 0;
+	}
+
+	private void record(String handlerName, int sum) {
+		sharedData.sum = sum;
+		String tenant = ContextContainer.getInstance().getTenant();
+		sharedData.addTenant(tenant);
+		sharedData.addHandler(handlerName);
+		sharedData.addObservation(tenant, handlerName, sum);
+		sharedData.latch.countDown();
 	}
 }

@@ -32,9 +32,7 @@ public abstract class BaseComposeContainer {
     @Container
     public static DockerComposeContainer<?> environment =
             new DockerComposeContainer<>("junut",composeFile)
-
                     .withEnv(map)
-
             ;
 
 

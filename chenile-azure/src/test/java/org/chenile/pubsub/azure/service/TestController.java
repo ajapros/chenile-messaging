@@ -31,6 +31,27 @@ public class TestController extends ControllerSupport{
 		return process("f1",request,payload);
 	}
 
+	@PostMapping("/order")
+	@EventsSubscribedTo({"order-created", "order-updated"})
+	ResponseEntity<GenericResponse<Map<String, Object>>> orderEvent(HttpServletRequest request,
+																 @RequestBody Payload payload){
+		return process("orderEvent",request,payload);
+	}
+
+	@PostMapping("/invoice-paid")
+	@EventsSubscribedTo({"invoice-paid"})
+	ResponseEntity<GenericResponse<Map<String, Object>>> invoicePaid(HttpServletRequest request,
+																  @RequestBody Payload payload){
+		return process("invoicePaid",request,payload);
+	}
+
+	@PostMapping("/audit")
+	@EventsSubscribedTo({"audit-created"})
+	ResponseEntity<GenericResponse<Map<String, Object>>> auditEvent(HttpServletRequest request,
+																 @RequestBody Payload payload){
+		return process("auditEvent",request,payload);
+	}
+
 	@PostMapping("/dl")
 	@EventsSubscribedTo({"eh2"})
 	ResponseEntity<GenericResponse<Map<String, Object>>> dlHandler(HttpServletRequest request,

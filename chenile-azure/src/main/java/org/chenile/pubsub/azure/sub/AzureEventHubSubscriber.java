@@ -12,8 +12,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.InitializingBean;
 
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -58,24 +56,22 @@ public class AzureEventHubSubscriber implements Consumer<EventContext>, Initiali
 
         try {
             List<ChenileExchange> resList = processWithTenantContext(topic, body, propertiesMap);
-
-            for(ChenileExchange res:resList){
-                if(res.getException()!=null){
-                    Map<String, Object> props =
-                            new HashMap<>(eventContext.getEventData().getProperties());
-
-                    props.put("e",res.getException().getMessage());
-                    chenilePub.asyncPublish(chenileEventHubProperties.getDl(),body,props);
-                }
-            }
-            // Update checkpoint after successful processing
+            processDeadLetters(body, eventContext.getEventData().getProperties(), resList);
             LOGGER.info("Checkpoint updated for partition {}", eventContext.getPartitionContext().getPartitionId());
+            eventContext.updateCheckpoint();
         } catch (Exception e) {
             LOGGER.error("Error processing event: {}", body, e);
-            // Decide whether to retry, dead-letter, or propagate
             throw new RuntimeException(e);
-        }finally {
-            eventContext.updateCheckpoint();
+        }
+    }
+
+    void processDeadLetters(String body, Map<String, Object> eventProperties, List<ChenileExchange> results) {
+        for (ChenileExchange res : results) {
+            if (res.getException() != null) {
+                Map<String, Object> props = new HashMap<>(eventProperties);
+                props.put("e", res.getException().getMessage());
+                chenilePub.asyncPublish(chenileEventHubProperties.getDl(), body, props);
+            }
         }
     }
 

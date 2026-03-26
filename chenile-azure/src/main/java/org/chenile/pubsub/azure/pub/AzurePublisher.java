@@ -71,8 +71,9 @@ public class AzurePublisher implements ChenilePub {
     }
 
     private void sendMessage(String topic, String payload, Map<String, Object> properties) {
+        String physicalTopic = chenileEventHubProperties.resolvePhysicalHubName(topic);
         String resolvedTopic = EventHubNameUtils.resolveHubName(
-                topic,
+                physicalTopic,
                 properties,
                 chenileEventHubProperties.getClients(),
                 chenileEventHubProperties.getClientPrefixSeparator()
@@ -122,10 +123,12 @@ public class AzurePublisher implements ChenilePub {
      * @return list of Kafka headers
      */
     private static Map<String, Object> buildHeaders(String topic, Map<String, Object> properties) {
-
-        properties.put(CHENILE_TOPIC_KEY,topic);
-
-        return properties;
+        Map<String, Object> headers = new HashMap<>();
+        if (properties != null && !properties.isEmpty()) {
+            headers.putAll(properties);
+        }
+        headers.put(CHENILE_TOPIC_KEY, topic);
+        return headers;
     }
 
     /**

@@ -2,6 +2,8 @@ package org.chenile.pubsub.azure;
 
 import org.chenile.pubsub.azure.service.TestService;
 import org.chenile.pubsub.azure.service.TestServiceImpl;
+import org.chenile.pubsub.azure.service.RoutingTestService;
+import org.chenile.pubsub.azure.service.RoutingTestServiceImpl;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.web.servlet.support.SpringBootServletInitializer;
 import org.springframework.context.annotation.Bean;
@@ -23,9 +25,11 @@ public class SpringConfig extends SpringBootServletInitializer  {
     @Bean("testService") public TestService testService() {
 		return new TestServiceImpl();
 	}
+	@Bean("routingTestService") public RoutingTestService routingTestService() {
+		return new RoutingTestServiceImpl();
+	}
 	@Bean SharedData sharedData() { return new SharedData();}
 
 
 
 }
-

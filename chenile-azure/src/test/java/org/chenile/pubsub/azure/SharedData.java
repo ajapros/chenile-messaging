@@ -13,14 +13,34 @@ public class SharedData {
     public CountDownLatch latch = new CountDownLatch(1);
     public int sum; // this will be updated with the computed sum by the test class.
     public final List<String> tenantsSeen = new CopyOnWriteArrayList<>();
+    public final List<String> handlersSeen = new CopyOnWriteArrayList<>();
+    public final List<String> observations = new CopyOnWriteArrayList<>();
 
     public void reset(){
         this.latch = new CountDownLatch(1);
         sum =0;
         tenantsSeen.clear();
+        handlersSeen.clear();
+        observations.clear();
     }
 
     public void addTenant(String tenant) {
         tenantsSeen.add(tenant);
+    }
+
+    public void addHandler(String handler) {
+        handlersSeen.add(handler);
+    }
+
+    public void addObservation(String tenant, String handler, int observedSum) {
+        observations.add(tenant + "|" + handler + "|" + observedSum);
+    }
+
+    public boolean hasObservation(String tenant, String handler, int observedSum) {
+        return observations.contains(tenant + "|" + handler + "|" + observedSum);
+    }
+
+    public boolean hasHandler(String handler) {
+        return handlersSeen.contains(handler);
     }
 }

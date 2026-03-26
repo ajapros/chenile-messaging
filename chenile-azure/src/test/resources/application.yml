@@ -15,13 +15,33 @@ spring:
         auto-start-consumers: false
         consumers:
           hubs:
-            chenile:
+            business-events:
+              consumer-group: "eh1consumer"
+            billing-events:
+              consumer-group: "eh1consumer"
+            shared-events:
               consumer-group: "eh1consumer"
             eh2:
               consumer-group: "eh2consumer"
         producers:
           - chenile
-          - eh2
+          - order-created
+          - order-updated
+          - invoice-paid
+          - shipment-created
+          - shipment-updated
+          - refund-issued
+          - customer-alert
+        routes:
+          chenile: business-events
+          order-created: business-events
+          order-updated: business-events
+          invoice-paid: billing-events
+          shipment-created: business-events
+          shipment-updated: business-events
+          refund-issued: billing-events
+          eh2: eh2
+        default-route: shared-events
         clients:
           - acme
           - beta

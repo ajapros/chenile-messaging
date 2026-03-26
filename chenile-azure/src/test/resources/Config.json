@@ -3,10 +3,10 @@
     "NamespaceConfig": [
       {
         "Type": "EventHub",
-        "Name": "chenile",
+        "Name": "emulatorns1",
         "Entities": [
           {
-            "Name": "chenile",
+            "Name": "acme-business-events",
             "PartitionCount": "2",
             "ConsumerGroups": [
               {
@@ -18,7 +18,7 @@
             ]
           },
           {
-            "Name": "acme-chenile",
+            "Name": "acme-billing-events",
             "PartitionCount": "2",
             "ConsumerGroups": [
               {
@@ -30,11 +30,47 @@
             ]
           },
           {
-            "Name": "eh2",
+            "Name": "beta-business-events",
             "PartitionCount": "2",
             "ConsumerGroups": [
               {
-                "Name": "eh2consumer"
+                "Name": "eh1consumer"
+              },
+              {
+                "Name": "dead_letter"
+              }
+            ]
+          },
+          {
+            "Name": "beta-billing-events",
+            "PartitionCount": "2",
+            "ConsumerGroups": [
+              {
+                "Name": "eh1consumer"
+              },
+              {
+                "Name": "dead_letter"
+              }
+            ]
+          },
+          {
+            "Name": "acme-shared-events",
+            "PartitionCount": "2",
+            "ConsumerGroups": [
+              {
+                "Name": "eh1consumer"
+              },
+              {
+                "Name": "dead_letter"
+              }
+            ]
+          },
+          {
+            "Name": "beta-shared-events",
+            "PartitionCount": "2",
+            "ConsumerGroups": [
+              {
+                "Name": "eh1consumer"
               },
               {
                 "Name": "dead_letter"
@@ -47,18 +83,6 @@
             "ConsumerGroups": [
               {
                 "Name": "eh2consumer"
-              },
-              {
-                "Name": "dead_letter"
-              }
-            ]
-          },
-          {
-            "Name": "beta-chenile",
-            "PartitionCount": "2",
-            "ConsumerGroups": [
-              {
-                "Name": "eh1consumer"
               },
               {
                 "Name": "dead_letter"
