@@ -37,11 +37,15 @@ public class EventHubStaticMappingConfiguration {
     @Bean
     public Map<String, EventHubProducerClient> producerClients() {
         Map<String, EventHubProducerClient> producers = new HashMap<>();
-        EventHubNameUtils.expandHubNames(
-                eventHubProperties.getResolvedProducerHubs(),
-                eventHubProperties.getClients(),
-                eventHubProperties.getClientPrefixSeparator()
-        ).forEach((hubName) -> {
+        List<String> producerHubNames = eventHubProperties.getResolvedProducerHubs();
+        if (eventHubProperties.isClientPrefixEnabled()) {
+            producerHubNames = EventHubNameUtils.expandHubNames(
+                    producerHubNames,
+                    eventHubProperties.getClients(),
+                    eventHubProperties.getClientPrefixSeparator()
+            );
+        }
+        producerHubNames.forEach((hubName) -> {
             EventHubClientBuilder builder = new EventHubClientBuilder()
                     .connectionString(eventHubProperties.getConnectionString(), hubName);
             producers.put(hubName, builder.buildProducerClient());
@@ -64,11 +68,15 @@ public class EventHubStaticMappingConfiguration {
         String separator = eventHubProperties.getClientPrefixSeparator();
 
         eventHubProperties.getResolvedConsumerHubs().forEach((hubName, hubConfig) -> {
-            EventHubNameUtils.expandHubNames(
-                    List.of(hubName),
-                    clients,
-                    separator
-            ).forEach((expandedHubName) -> {
+            List<String> consumerHubNames = List.of(hubName);
+            if (eventHubProperties.isClientPrefixEnabled()) {
+                consumerHubNames = EventHubNameUtils.expandHubNames(
+                        consumerHubNames,
+                        clients,
+                        separator
+                );
+            }
+            consumerHubNames.forEach((expandedHubName) -> {
                 EventProcessorClient processor = new EventProcessorClientBuilder()
                         .connectionString(eventHubProperties.getConnectionString(), expandedHubName)
                         .consumerGroup(hubConfig.getConsumerGroup())

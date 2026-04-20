@@ -34,6 +34,17 @@ public class ChenileEventHubPropertiesBindingTest {
     }
 
     @Test
+    void clientPrefixIsDisabledByDefault() {
+        contextRunner
+                .withInitializer(context -> addYaml(context, "config/valid-routing.yml"))
+                .run(context -> {
+                    ChenileEventHubProperties properties = context.getBean(ChenileEventHubProperties.class);
+
+                    Assertions.assertFalse(properties.isClientPrefixEnabled());
+                });
+    }
+
+    @Test
     void blankDefaultRouteFailsWhenUsed() {
         contextRunner
                 .withInitializer(context -> addYaml(context, "config/invalid-default-route.yml"))

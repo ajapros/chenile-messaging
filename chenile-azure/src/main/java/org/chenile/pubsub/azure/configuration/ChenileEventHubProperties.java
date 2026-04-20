@@ -34,6 +34,11 @@ public class ChenileEventHubProperties {
      */
     private String defaultRoute;
 
+    /**
+     * When enabled, tenant/client identifiers are prefixed to the physical Event Hub name.
+     */
+    private boolean clientPrefixEnabled = false;
+
     private String clientPrefixSeparator = "_";
 
     private Consumers consumers = new Consumers();
@@ -70,6 +75,9 @@ public class ChenileEventHubProperties {
 
     public String getDefaultRoute() { return defaultRoute; }
     public void setDefaultRoute(String defaultRoute) { this.defaultRoute = defaultRoute; }
+
+    public boolean isClientPrefixEnabled() { return clientPrefixEnabled; }
+    public void setClientPrefixEnabled(boolean clientPrefixEnabled) { this.clientPrefixEnabled = clientPrefixEnabled; }
 
     public String getClientPrefixSeparator() { return clientPrefixSeparator; }
     public void setClientPrefixSeparator(String clientPrefixSeparator) { this.clientPrefixSeparator = clientPrefixSeparator; }

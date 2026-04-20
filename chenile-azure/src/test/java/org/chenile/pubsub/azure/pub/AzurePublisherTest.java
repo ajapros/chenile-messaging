@@ -79,10 +79,34 @@ public class AzurePublisherTest {
         ChenileEventHubProperties properties = new ChenileEventHubProperties();
         properties.setRoutes(Map.of("order-created", "business-events"));
         properties.setClients(java.util.List.of("acme"));
+        properties.setClientPrefixEnabled(true);
         properties.setClientPrefixSeparator("-");
 
         AzurePublisher publisher = new AzurePublisher(null, properties);
         ReflectionTestUtils.setField(publisher, "producerClients", Map.of("acme-business-events", producerClient));
+
+        Map<String, Object> headers = new HashMap<>();
+        headers.put(HeaderUtils.TENANT_ID_KEY, "acme");
+
+        publisher.asyncPublish("order-created", "{\"id\":1}", headers);
+
+        verify(producerClient).send(batch);
+    }
+
+    @Test
+    void asyncPublishDoesNotApplyTenantPrefixUnlessEnabled() {
+        EventHubProducerClient producerClient = mock(EventHubProducerClient.class);
+        EventDataBatch batch = mock(EventDataBatch.class);
+        when(producerClient.createBatch(any())).thenReturn(batch);
+        when(batch.tryAdd(any())).thenReturn(true);
+
+        ChenileEventHubProperties properties = new ChenileEventHubProperties();
+        properties.setRoutes(Map.of("order-created", "business-events"));
+        properties.setClients(java.util.List.of("acme"));
+        properties.setClientPrefixSeparator("-");
+
+        AzurePublisher publisher = new AzurePublisher(null, properties);
+        ReflectionTestUtils.setField(publisher, "producerClients", Map.of("business-events", producerClient));
 
         Map<String, Object> headers = new HashMap<>();
         headers.put(HeaderUtils.TENANT_ID_KEY, "acme");

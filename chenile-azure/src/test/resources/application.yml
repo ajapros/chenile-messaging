@@ -45,6 +45,7 @@ spring:
         clients:
           - acme
           - beta
+        client-prefix-enabled: true
         client-prefix-separator: "-"
         dl:
           eh2

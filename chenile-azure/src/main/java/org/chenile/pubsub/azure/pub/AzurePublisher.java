@@ -72,12 +72,15 @@ public class AzurePublisher implements ChenilePub {
 
     private void sendMessage(String topic, String payload, Map<String, Object> properties) {
         String physicalTopic = chenileEventHubProperties.resolvePhysicalHubName(topic);
-        String resolvedTopic = EventHubNameUtils.resolveHubName(
-                physicalTopic,
-                properties,
-                chenileEventHubProperties.getClients(),
-                chenileEventHubProperties.getClientPrefixSeparator()
-        );
+        String resolvedTopic = physicalTopic;
+        if (chenileEventHubProperties.isClientPrefixEnabled()) {
+            resolvedTopic = EventHubNameUtils.resolveHubName(
+                    physicalTopic,
+                    properties,
+                    chenileEventHubProperties.getClients(),
+                    chenileEventHubProperties.getClientPrefixSeparator()
+            );
+        }
         // Check if the producer client for the topic exists
         if (!producerClients.containsKey(resolvedTopic) || producerClients.get(resolvedTopic) == null) {
             throw new IllegalStateException(
