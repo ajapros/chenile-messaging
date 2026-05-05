@@ -1,8 +1,7 @@
-spring:
-  chenile:
-    azure:
-      eventhubs:
-        default-route: shared-events
-        routes:
-          order-created: business-events
-          invoice-paid: billing-events
+chenile:
+  azure:
+    eventhubs:
+      default-route: shared-events
+      routes:
+        order-created: business-events
+        invoice-paid: billing-events

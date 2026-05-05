@@ -26,14 +26,13 @@ Key features:
 
 ## Configuration
 
-All configurations are stored under the `spring.chenile` namespace in `application.yml` or `application.properties`.
+All configurations are stored under the `chenile` namespace in `application.yml` or `application.properties`.
 
 ### Event Hub Configuration
 
 ```yaml
-spring:
-  chenile:
-    azure:
+chenile:
+  azure:
       eventhubs:
         transport-type: AMQP_WEB_SOCKETS
         namespace: sb://localhost/;
@@ -42,7 +41,7 @@ spring:
         consumers:
           hubs:
             chenile:
-              consumer-group: "eh1consumer"
+            consumer-group: "eh1consumer"
             eh2:
               consumer-group: "eh2consumer"
         producers:
@@ -64,9 +63,8 @@ spring:
 ### Blob Storage Configuration
 
 ```yaml
-spring:
-  chenile:
-    storage:
+chenile:
+  storage:
       blob:
         endpoint: "http://localhost:10000/devstoreaccount1"
         container: "chenilequeue"

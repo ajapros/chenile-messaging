@@ -14,10 +14,10 @@ public class AzureStorageChenileConfiguration {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(AzureStorageChenileConfiguration.class);
 
-    @Value("${spring.chenile.storage.blob.endpoint}")
+    @Value("${chenile.storage.blob.endpoint}")
     private String storageBlobEndpoint;
 
-    @Value("${spring.chenile.storage.blob.container}")
+    @Value("${chenile.storage.blob.container}")
     private String storageBlobContainer;
 
     @Bean

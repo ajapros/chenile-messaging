@@ -13,8 +13,8 @@ This module provides:
 
 The main configuration classes are:
 
-- `spring.chenile.azure.eventhubs.*` bound by [`ChenileEventHubProperties.java`](/Users/gauravbhardwaj/work/ajapro/chenile-mqtt/chenile-azure/src/main/java/org/chenile/pubsub/azure/configuration/ChenileEventHubProperties.java)
-- `spring.chenile.storage.blob.*` bound by [`BlobStorageProperties.java`](/Users/gauravbhardwaj/work/ajapro/chenile-mqtt/chenile-azure/src/main/java/org/chenile/pubsub/azure/configuration/storage/BlobStorageProperties.java)
+- `chenile.azure.eventhubs.*` bound by [`ChenileEventHubProperties.java`](/Users/gauravbhardwaj/work/ajapro/chenile-mqtt/chenile-azure/src/main/java/org/chenile/pubsub/azure/configuration/ChenileEventHubProperties.java)
+- `chenile.storage.blob.*` bound by [`BlobStorageProperties.java`](/Users/gauravbhardwaj/work/ajapro/chenile-mqtt/chenile-azure/src/main/java/org/chenile/pubsub/azure/configuration/storage/BlobStorageProperties.java)
 
 ## How Resolution Works
 
@@ -33,14 +33,46 @@ Examples:
 
 Tenant handling inside the application is separate from Event Hub naming. The subscriber restores tenant context from message headers even when prefixing is disabled.
 
+## Message Interceptors
+
+Applications can register Spring beans that implement `org.chenile.pubsub.interceptor.PubSubMessageInterceptor`.
+The interceptor API lives in `chenile-pub-sub`, so the same contract can be reused by other providers.
+
+Azure invokes these hooks:
+
+- `beforePublish(...)` after logical topic routing and before `EventData` is created
+- `beforeSubscribe(...)` after Azure body/properties are read and before `EventProcessor.handleEvent(...)`
+
+Example:
+
+```java
+@Bean
+PubSubMessageInterceptor auditHeaderInterceptor() {
+    return new PubSubMessageInterceptor() {
+        @Override
+        public PubSubMessage beforePublish(PubSubMessage message) {
+            message.getHeaders().put("source", "orders");
+            return message;
+        }
+
+        @Override
+        public PubSubMessage beforeSubscribe(PubSubMessage message) {
+            message.getHeaders().put("receivedBy", "chenile-azure");
+            return message;
+        }
+    };
+}
+```
+
+Use Spring `@Order` on interceptor beans when multiple interceptors must run in a fixed order.
+
 ## Event Hub Properties
 
 All Event Hub properties are under:
 
 ```yaml
-spring:
-  chenile:
-    azure:
+chenile:
+  azure:
       eventhubs:
 ```
 
@@ -51,9 +83,8 @@ Azure Event Hubs connection string used to build all producer and consumer clien
 Example:
 
 ```yaml
-spring:
-  chenile:
-    azure:
+chenile:
+  azure:
       eventhubs:
         connection-string: "Endpoint=sb://namespace.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=..."
 ```
@@ -235,9 +266,8 @@ If blank, the code falls back to `_`.
 All Blob Storage properties are under:
 
 ```yaml
-spring:
-  chenile:
-    storage:
+chenile:
+  storage:
       blob:
 ```
 
@@ -301,9 +331,8 @@ Required when `credential-type: sas`.
 Use this when all tenants share the same physical Event Hubs and tenant separation is handled in message headers and Chenile context.
 
 ```yaml
-spring:
-  chenile:
-    azure:
+chenile:
+  azure:
       eventhubs:
         connection-string: "Endpoint=sb://namespace.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=..."
         auto-start-consumers: true
@@ -344,9 +373,8 @@ Resolution examples:
 Use this when each tenant has its own physical Event Hubs.
 
 ```yaml
-spring:
-  chenile:
-    azure:
+chenile:
+  azure:
       eventhubs:
         connection-string: "Endpoint=sb://namespace.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=..."
         auto-start-consumers: false
@@ -395,9 +423,8 @@ Resolution examples:
 ### Example 3: Blob SAS credentials
 
 ```yaml
-spring:
-  chenile:
-    storage:
+chenile:
+  storage:
       blob:
         endpoint: "https://storage-account.blob.core.windows.net"
         container: "chenilequeue"

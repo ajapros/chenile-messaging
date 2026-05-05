@@ -8,10 +8,14 @@ import org.chenile.core.context.HeaderUtils;
 import org.chenile.core.event.EventProcessor;
 import org.chenile.pubsub.ChenilePub;
 import org.chenile.pubsub.azure.configuration.ChenileEventHubProperties;
+import org.chenile.pubsub.interceptor.PubSubDirection;
+import org.chenile.pubsub.interceptor.PubSubMessage;
+import org.chenile.pubsub.interceptor.PubSubMessageInterceptor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.InitializingBean;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -31,12 +35,20 @@ public class AzureEventHubSubscriber implements Consumer<EventContext>, Initiali
     private final ChenilePub chenilePub;
 
     private final ChenileEventHubProperties chenileEventHubProperties;
+    private final List<PubSubMessageInterceptor> interceptors;
 
     public AzureEventHubSubscriber(EventProcessor eventProcessor, ChenilePub chenilePub,
                                    ChenileEventHubProperties chenileEventHubProperties) {
+        this(eventProcessor, chenilePub, chenileEventHubProperties, Collections.emptyList());
+    }
+
+    public AzureEventHubSubscriber(EventProcessor eventProcessor, ChenilePub chenilePub,
+                                   ChenileEventHubProperties chenileEventHubProperties,
+                                   List<PubSubMessageInterceptor> interceptors) {
         this.eventProcessor = eventProcessor;
         this.chenilePub = chenilePub;
         this.chenileEventHubProperties = chenileEventHubProperties;
+        this.interceptors = interceptors == null ? Collections.emptyList() : interceptors;
     }
 
     @Override
@@ -50,12 +62,27 @@ public class AzureEventHubSubscriber implements Consumer<EventContext>, Initiali
                         LOGGER.info("Property: {} = {}", key, val)
                 );
 
+        Map<String, Object> metadata = new HashMap<>();
+        metadata.put("azure.partitionId", eventContext.getPartitionContext().getPartitionId());
+        metadata.put("azure.sequenceNumber", eventContext.getEventData().getSequenceNumber());
+
+        PubSubMessage message = applyBeforeSubscribeInterceptors(
+                new PubSubMessage(
+                        null,
+                        body,
+                        eventContext.getEventData().getProperties(),
+                        PubSubDirection.SUBSCRIBE,
+                        "azure",
+                        metadata
+                )
+        );
+
         // Convert properties to Map<String,String>
-        Map<String, String> propertiesMap = convert(eventContext.getEventData().getProperties());
+        Map<String, String> propertiesMap = convert(message.getHeaders());
         String topic = propertiesMap.get(CHENILE_TOPIC_KEY);
 
         try {
-            List<ChenileExchange> resList = processWithTenantContext(topic, body, propertiesMap);
+            List<ChenileExchange> resList = processWithTenantContext(topic, message.getPayload(), propertiesMap);
             processDeadLetters(body, eventContext.getEventData().getProperties(), resList);
             LOGGER.info("Checkpoint updated for partition {}", eventContext.getPartitionContext().getPartitionId());
             eventContext.updateCheckpoint();
@@ -103,5 +130,17 @@ public class AzureEventHubSubscriber implements Consumer<EventContext>, Initiali
     @Override
     public void afterPropertiesSet() throws Exception {
 
+    }
+
+    private PubSubMessage applyBeforeSubscribeInterceptors(PubSubMessage message) {
+        PubSubMessage current = message;
+        for (PubSubMessageInterceptor interceptor : interceptors) {
+            PubSubMessage intercepted = interceptor.beforeSubscribe(current);
+            if (intercepted == null) {
+                throw new IllegalStateException("PubSubMessageInterceptor returned null from beforeSubscribe");
+            }
+            current = intercepted;
+        }
+        return current;
     }
 }

@@ -21,7 +21,7 @@ public class ChenileEventHubPropertiesBindingTest {
             .withUserConfiguration(TestConfiguration.class);
 
     @Test
-    void bindsRoutesAndDefaultRouteFromSpringProperties() {
+    void bindsRoutesAndDefaultRouteFromChenileProperties() {
         contextRunner
                 .withInitializer(context -> addYaml(context, "config/valid-routing.yml"))
                 .run(context -> {

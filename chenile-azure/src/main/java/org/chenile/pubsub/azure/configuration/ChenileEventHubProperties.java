@@ -13,7 +13,7 @@ import java.util.Objects;
 import java.util.Set;
 
 @Component
-@ConfigurationProperties(prefix = "spring.chenile.azure.eventhubs")
+@ConfigurationProperties(prefix = "chenile.azure.eventhubs")
 public class ChenileEventHubProperties {
 
     private String connectionString;

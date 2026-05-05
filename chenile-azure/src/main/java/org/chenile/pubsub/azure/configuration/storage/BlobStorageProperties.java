@@ -4,7 +4,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
 @Component
-@ConfigurationProperties(prefix = "spring.chenile.storage.blob")
+@ConfigurationProperties(prefix = "chenile.storage.blob")
 public class BlobStorageProperties {
 
     private String endpoint;

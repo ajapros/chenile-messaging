@@ -9,6 +9,9 @@ import org.chenile.pubsub.ChenilePub;
 import org.chenile.pubsub.azure.configuration.ChenileEventHubProperties;
 import org.chenile.pubsub.azure.util.EventHubNameUtils;
 import org.chenile.pubsub.errorcodes.ErrorCodes;
+import org.chenile.pubsub.interceptor.PubSubDirection;
+import org.chenile.pubsub.interceptor.PubSubMessage;
+import org.chenile.pubsub.interceptor.PubSubMessageInterceptor;
 import org.chenile.pubsub.model.ChenilePubSub;
 import org.chenile.pubsub.provider.PubSubInfoProvider;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,14 +27,22 @@ public class AzurePublisher implements ChenilePub {
 
     private final PubSubInfoProvider pubSubInfoProvider;
     private final ChenileEventHubProperties chenileEventHubProperties;
+    private final List<PubSubMessageInterceptor> interceptors;
 
     @Autowired
     private Map<String, EventHubProducerClient> producerClients;
 
     public AzurePublisher(PubSubInfoProvider pubSubInfoProvider,
                           ChenileEventHubProperties chenileEventHubProperties) {
+        this(pubSubInfoProvider, chenileEventHubProperties, Collections.emptyList());
+    }
+
+    public AzurePublisher(PubSubInfoProvider pubSubInfoProvider,
+                          ChenileEventHubProperties chenileEventHubProperties,
+                          List<PubSubMessageInterceptor> interceptors) {
         this.pubSubInfoProvider = pubSubInfoProvider;
         this.chenileEventHubProperties = chenileEventHubProperties;
+        this.interceptors = interceptors == null ? Collections.emptyList() : interceptors;
     }
     /**
      * Publishes a message to the given service's operation topic.
@@ -89,8 +100,19 @@ public class AzurePublisher implements ChenilePub {
             );
         }
 
-        EventData eventData = new EventData(payload);
-        eventData.getProperties().putAll(buildHeaders(topic, properties));
+        PubSubMessage message = applyBeforePublishInterceptors(
+                new PubSubMessage(
+                        topic,
+                        payload,
+                        buildHeaders(topic, properties),
+                        PubSubDirection.PUBLISH,
+                        "azure",
+                        Map.of("azure.physicalHub", resolvedTopic)
+                )
+        );
+
+        EventData eventData = new EventData(message.getPayload());
+        eventData.getProperties().putAll(message.getHeaders());
 
         CreateBatchOptions createBatchOptions = new CreateBatchOptions();
         createBatchOptions.setPartitionId(getPartition(properties));
@@ -171,5 +193,17 @@ public class AzurePublisher implements ChenilePub {
         } catch (NumberFormatException e) {
             return String.valueOf(0); // fallback to default
         }
+    }
+
+    private PubSubMessage applyBeforePublishInterceptors(PubSubMessage message) {
+        PubSubMessage current = message;
+        for (PubSubMessageInterceptor interceptor : interceptors) {
+            PubSubMessage intercepted = interceptor.beforePublish(current);
+            if (intercepted == null) {
+                throw new IllegalStateException("PubSubMessageInterceptor returned null from beforePublish");
+            }
+            current = intercepted;
+        }
+        return current;
     }
 }

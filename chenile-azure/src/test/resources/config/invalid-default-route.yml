@@ -1,5 +1,4 @@
-spring:
-  chenile:
-    azure:
-      eventhubs:
-        default-route: " "
+chenile:
+  azure:
+    eventhubs:
+      default-route: " "
