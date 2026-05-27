@@ -161,7 +161,7 @@ public class CloudEdgeSwitch extends BaseChenileInterceptor {
 			super.doContinue(exchange);
 			if (exchange.getException() != null){
 				ErrorNumException e = exchange.getException();
-                return e.getSubErrorNum() != ErrorCodes.CANNOT_CONNECT.getSubError();
+                return !e.getSubErrorNum().equals(String.valueOf(ErrorCodes.CANNOT_CONNECT.getSubError()));
 			}
 		}catch(Exception e){
 			ServerException exception = new ServerException(CANNOT_INVOKE_CLOUD.getSubError(),new Object[]{e.getMessage()}, e);
