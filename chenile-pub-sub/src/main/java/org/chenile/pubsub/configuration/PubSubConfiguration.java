@@ -1,11 +1,18 @@
 package org.chenile.pubsub.configuration;
 
+import org.chenile.core.external.ExternalApiProperties;
+import org.chenile.core.external.ExternalApiPublisher;
+import org.chenile.pubsub.ChenilePub;
 import org.chenile.pubsub.entry.PubSubEntryPoint;
 import org.chenile.pubsub.init.ChenilePubSubInitializer;
+import org.chenile.pubsub.logging.PubSubExternalApiPublisher;
 import org.chenile.pubsub.provider.PubSubInfoProvider;
 import org.chenile.pubsub.wildcard.WildCardsTopic;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -51,4 +58,13 @@ public class PubSubConfiguration {
         return new PubSubEntryPoint();
     }
 
+    @Bean
+    @ConditionalOnBean(ExternalApiProperties.class)
+    @ConditionalOnMissingBean(ExternalApiPublisher.class)
+    @ConditionalOnProperty(prefix = "chenile.external-api.logging", name = "publisher",
+            havingValue = "pubsub")
+    public ExternalApiPublisher externalApiPublisher(ObjectProvider<ChenilePub> chenilePubProvider,
+                                                     ExternalApiProperties externalApiProperties) {
+        return new PubSubExternalApiPublisher(chenilePubProvider, externalApiProperties);
+    }
 }
