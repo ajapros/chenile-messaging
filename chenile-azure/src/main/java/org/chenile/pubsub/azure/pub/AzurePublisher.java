@@ -17,7 +17,7 @@ import org.chenile.pubsub.provider.PubSubInfoProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import java.util.*;
 
-import static org.chenile.pubsub.azure.constants.ChenileKafkaConstants.*;
+import static org.chenile.pubsub.azure.constants.ChenileAzureConstants.*;
 
 /**
  * Azure-based implementation of the {@link ChenilePub} interface.
@@ -115,7 +115,7 @@ public class AzurePublisher implements ChenilePub {
         eventData.getProperties().putAll(message.getHeaders());
 
         CreateBatchOptions createBatchOptions = new CreateBatchOptions();
-        createBatchOptions.setPartitionId(getPartition(properties));
+        applyPartitionRouting(createBatchOptions, properties);
 
         EventDataBatch batch = producerClients.get(resolvedTopic).createBatch(createBatchOptions);
 
@@ -174,25 +174,62 @@ public class AzurePublisher implements ChenilePub {
         return result;
     }
 
+    /** Configures default, explicit-ID, Azure-keyed, or automatic Event Hubs routing. */
+    private static void applyPartitionRouting(CreateBatchOptions options, Map<String, Object> properties) {
+        String partitionId = getPartitionId(properties);
+        String partitionKey = getPartitionKey(properties);
+        String partitionMode = getPartitionMode(properties);
+        if (partitionId != null && partitionKey != null) {
+            throw new IllegalArgumentException("Only one partition selector may be supplied: "
+                    + CHENILE_AZURE_PARTITION_ID + " or " + CHENILE_AZURE_PARTITION_KEY);
+        }
+        if (partitionMode != null && !CHENILE_AZURE_PARTITION_MODE_AUTO.equals(partitionMode)) {
+            throw new IllegalArgumentException("Unsupported Azure partition mode '" + partitionMode
+                    + "'. Supported mode: " + CHENILE_AZURE_PARTITION_MODE_AUTO);
+        }
+        if (CHENILE_AZURE_PARTITION_MODE_AUTO.equals(partitionMode)) {
+            if (partitionId != null || partitionKey != null) {
+                throw new IllegalArgumentException(CHENILE_AZURE_PARTITION_MODE_AUTO
+                        + " partition mode cannot be combined with an explicit partition selector");
+            }
+            return;
+        }
+        if (partitionId != null) {
+            options.setPartitionId(partitionId);
+        } else if (partitionKey != null) {
+            options.setPartitionKey(partitionKey);
+        } else {
+            options.setPartitionId("0");
+        }
+    }
+
     /**
-     * Extracts the partition number from the properties map.
-     *
-     * @param properties the message properties
-     * @return the partition number (default = 0)
+     * Extracts an explicit partition number. An absent value is handled by the default partition
+     * zero route; an invalid supplied value retains the historic fallback to partition zero.
      */
-    private static String getPartition(Map<String, Object> properties) {
-        if (properties == null) {
-            return String.valueOf(0);
-        }
-        Object partitionObj = properties.get(CHENILE_KAFKA_PARTITION_KEY);
-        if (partitionObj == null) {
-            return String.valueOf(0);
-        }
+    private static String getPartitionId(Map<String, Object> properties) {
+        if (properties == null) return null;
+        Object partitionObj = properties.get(CHENILE_AZURE_PARTITION_ID);
+        if (partitionObj == null || partitionObj.toString().isBlank()) return null;
         try {
             return String.valueOf(Integer.parseInt(partitionObj.toString()));
         } catch (NumberFormatException e) {
             return String.valueOf(0); // fallback to default
         }
+    }
+
+    private static String getPartitionKey(Map<String, Object> properties) {
+        if (properties == null) return null;
+        Object partitionKey = properties.get(CHENILE_AZURE_PARTITION_KEY);
+        if (partitionKey == null || partitionKey.toString().isBlank()) return null;
+        return partitionKey.toString();
+    }
+
+    private static String getPartitionMode(Map<String, Object> properties) {
+        if (properties == null) return null;
+        Object partitionMode = properties.get(CHENILE_AZURE_PARTITION_MODE);
+        if (partitionMode == null || partitionMode.toString().isBlank()) return null;
+        return partitionMode.toString();
     }
 
     private PubSubMessage applyBeforePublishInterceptors(PubSubMessage message) {

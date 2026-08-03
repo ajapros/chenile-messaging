@@ -3,6 +3,7 @@ package org.chenile.pubsub.azure.pub;
 import com.azure.messaging.eventhubs.EventData;
 import com.azure.messaging.eventhubs.EventDataBatch;
 import com.azure.messaging.eventhubs.EventHubProducerClient;
+import com.azure.messaging.eventhubs.models.CreateBatchOptions;
 import org.chenile.core.context.HeaderUtils;
 import org.chenile.pubsub.azure.configuration.ChenileEventHubProperties;
 import org.chenile.pubsub.interceptor.PubSubMessage;
@@ -20,8 +21,149 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.chenile.pubsub.azure.constants.ChenileAzureConstants.CHENILE_AZURE_PARTITION_ID;
+import static org.chenile.pubsub.azure.constants.ChenileAzureConstants.CHENILE_AZURE_PARTITION_KEY;
+import static org.chenile.pubsub.azure.constants.ChenileAzureConstants.CHENILE_AZURE_PARTITION_MODE;
+import static org.chenile.pubsub.azure.constants.ChenileAzureConstants.CHENILE_AZURE_PARTITION_MODE_AUTO;
 
 public class AzurePublisherTest {
+
+    @Test
+    void asyncPublishDefaultsToPartitionZero() {
+        EventHubProducerClient producerClient = mock(EventHubProducerClient.class);
+        EventDataBatch batch = mock(EventDataBatch.class);
+        ArgumentCaptor<CreateBatchOptions> options = ArgumentCaptor.forClass(CreateBatchOptions.class);
+        when(producerClient.createBatch(options.capture())).thenReturn(batch);
+        when(batch.tryAdd(any())).thenReturn(true);
+
+        AzurePublisher publisher = publisherFor(producerClient);
+        publisher.asyncPublish("topic-a", "payload", Map.of());
+
+        Assertions.assertEquals("0", options.getValue().getPartitionId());
+        Assertions.assertNull(options.getValue().getPartitionKey());
+    }
+
+    @Test
+    void asyncPublishUsesExplicitLegacyPartitionId() {
+        EventHubProducerClient producerClient = mock(EventHubProducerClient.class);
+        EventDataBatch batch = mock(EventDataBatch.class);
+        ArgumentCaptor<CreateBatchOptions> options = ArgumentCaptor.forClass(CreateBatchOptions.class);
+        when(producerClient.createBatch(options.capture())).thenReturn(batch);
+        when(batch.tryAdd(any())).thenReturn(true);
+
+        AzurePublisher publisher = publisherFor(producerClient);
+        publisher.asyncPublish("topic-a", "payload", Map.of(CHENILE_AZURE_PARTITION_ID, 2));
+
+        Assertions.assertEquals("2", options.getValue().getPartitionId());
+        Assertions.assertNull(options.getValue().getPartitionKey());
+    }
+
+    @Test
+    void asyncPublishUsesAzureHashedBusinessPartitionKey() {
+        EventHubProducerClient producerClient = mock(EventHubProducerClient.class);
+        EventDataBatch batch = mock(EventDataBatch.class);
+        ArgumentCaptor<CreateBatchOptions> options = ArgumentCaptor.forClass(CreateBatchOptions.class);
+        when(producerClient.createBatch(options.capture())).thenReturn(batch);
+        when(batch.tryAdd(any())).thenReturn(true);
+
+        AzurePublisher publisher = publisherFor(producerClient);
+        publisher.asyncPublish("topic-a", "payload", Map.of(CHENILE_AZURE_PARTITION_KEY, "customer-123"));
+
+        Assertions.assertNull(options.getValue().getPartitionId());
+        Assertions.assertEquals("customer-123", options.getValue().getPartitionKey());
+    }
+
+    @Test
+    void asyncPublishRejectsBothPartitionSelectors() {
+        EventHubProducerClient producerClient = mock(EventHubProducerClient.class);
+        AzurePublisher publisher = publisherFor(producerClient);
+
+        IllegalArgumentException exception = Assertions.assertThrows(IllegalArgumentException.class,
+                () -> publisher.asyncPublish("topic-a", "payload", Map.of(
+                        CHENILE_AZURE_PARTITION_ID, 1,
+                        CHENILE_AZURE_PARTITION_KEY, "customer-123")));
+
+        Assertions.assertTrue(exception.getMessage().contains("Only one partition selector"));
+        verify(producerClient, org.mockito.Mockito.never()).createBatch(any());
+    }
+
+    @Test
+    void asyncPublishFallsBackToPartitionZeroForInvalidExplicitPartitionId() {
+        EventHubProducerClient producerClient = mock(EventHubProducerClient.class);
+        EventDataBatch batch = mock(EventDataBatch.class);
+        ArgumentCaptor<CreateBatchOptions> options = ArgumentCaptor.forClass(CreateBatchOptions.class);
+        when(producerClient.createBatch(options.capture())).thenReturn(batch);
+        when(batch.tryAdd(any())).thenReturn(true);
+
+        publisherFor(producerClient).asyncPublish("topic-a", "payload",
+                Map.of(CHENILE_AZURE_PARTITION_ID, "not-a-number"));
+
+        Assertions.assertEquals("0", options.getValue().getPartitionId());
+        Assertions.assertNull(options.getValue().getPartitionKey());
+    }
+
+    @Test
+    void asyncPublishTreatsBlankSelectorsAsDefaultPartitionZero() {
+        EventHubProducerClient producerClient = mock(EventHubProducerClient.class);
+        EventDataBatch batch = mock(EventDataBatch.class);
+        ArgumentCaptor<CreateBatchOptions> options = ArgumentCaptor.forClass(CreateBatchOptions.class);
+        when(producerClient.createBatch(options.capture())).thenReturn(batch);
+        when(batch.tryAdd(any())).thenReturn(true);
+
+        publisherFor(producerClient).asyncPublish("topic-a", "payload", Map.of(
+                CHENILE_AZURE_PARTITION_ID, " ",
+                CHENILE_AZURE_PARTITION_KEY, " "));
+
+        Assertions.assertEquals("0", options.getValue().getPartitionId());
+        Assertions.assertNull(options.getValue().getPartitionKey());
+    }
+
+    @Test
+    void asyncPublishLeavesSelectorsUnsetForExplicitAutoDistributionMode() {
+        EventHubProducerClient producerClient = mock(EventHubProducerClient.class);
+        EventDataBatch batch = mock(EventDataBatch.class);
+        ArgumentCaptor<CreateBatchOptions> options = ArgumentCaptor.forClass(CreateBatchOptions.class);
+        when(producerClient.createBatch(options.capture())).thenReturn(batch);
+        when(batch.tryAdd(any())).thenReturn(true);
+
+        publisherFor(producerClient).asyncPublish("topic-a", "payload",
+                Map.of(CHENILE_AZURE_PARTITION_MODE, CHENILE_AZURE_PARTITION_MODE_AUTO));
+
+        Assertions.assertNull(options.getValue().getPartitionId());
+        Assertions.assertNull(options.getValue().getPartitionKey());
+    }
+
+    @Test
+    void asyncPublishRejectsAutoModeWithExplicitPartitionId() {
+        assertInvalidRouting(Map.of(
+                CHENILE_AZURE_PARTITION_MODE, CHENILE_AZURE_PARTITION_MODE_AUTO,
+                CHENILE_AZURE_PARTITION_ID, 1));
+    }
+
+    @Test
+    void asyncPublishRejectsAutoModeWithBusinessPartitionKey() {
+        assertInvalidRouting(Map.of(
+                CHENILE_AZURE_PARTITION_MODE, CHENILE_AZURE_PARTITION_MODE_AUTO,
+                CHENILE_AZURE_PARTITION_KEY, "customer-123"));
+    }
+
+    @Test
+    void asyncPublishRejectsUnsupportedPartitionMode() {
+        assertInvalidRouting(Map.of(CHENILE_AZURE_PARTITION_MODE, "round-robin"));
+    }
+
+    private void assertInvalidRouting(Map<String, Object> properties) {
+        EventHubProducerClient producerClient = mock(EventHubProducerClient.class);
+        Assertions.assertThrows(IllegalArgumentException.class,
+                () -> publisherFor(producerClient).asyncPublish("topic-a", "payload", properties));
+        verify(producerClient, org.mockito.Mockito.never()).createBatch(any());
+    }
+
+    private AzurePublisher publisherFor(EventHubProducerClient producerClient) {
+        AzurePublisher publisher = new AzurePublisher(null, new ChenileEventHubProperties());
+        ReflectionTestUtils.setField(publisher, "producerClients", Map.of("topic-a", producerClient));
+        return publisher;
+    }
 
     @Test
     void buildHeadersHandlesNullProperties() {
