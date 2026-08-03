@@ -189,6 +189,41 @@ Behavior:
 - `true`: consumers start automatically
 - `false`: application must call `EventHubConsumerStarter.startConsumersManually()`
 
+## Per-Message Partition Routing Matrix
+
+Partition routing is supplied in the `Map<String, Object>` passed to
+`chenilePub.asyncPublish(...)`. It is not an application YAML setting.
+
+| Message properties | Azure Event Hubs behavior | Use when |
+| --- | --- | --- |
+| No routing properties | Sends to partition `0` | Backward-compatible/default processing |
+| `chenile.azure.partition-id: 2` | Sends directly to physical partition `2` | The producer deliberately owns partition selection |
+| `chenile.azure.partition-key: customer-123` | Azure hashes the key and keeps that key on one stable partition | Per-customer, loan, or aggregate ordering is required |
+| `chenile.azure.partition-mode: auto` | No selector is sent; Azure distributes independent messages across partitions | Throughput matters more than per-key ordering |
+
+Only one routing strategy may be selected for an event. These combinations fail before the
+message is sent:
+
+- `partition-id` with `partition-key`
+- `partition-mode: auto` with either `partition-id` or `partition-key`
+- any partition mode other than `auto`
+
+An invalid explicit `partition-id` falls back to partition `0`, preserving the prior publisher
+behavior. With three Event Hub partitions, three replicas in the same consumer group can process
+one assigned partition each; Azure rebalances partition ownership when replicas change.
+
+Example:
+
+```java
+// Azure-hashed routing: all events for this customer retain partition order.
+chenilePub.asyncPublish("order-created", payload,
+        Map.of("chenile.azure.partition-key", customerId));
+
+// Opt in to automatic distribution for independent events.
+chenilePub.asyncPublish("telemetry", payload,
+        Map.of("chenile.azure.partition-mode", "auto"));
+```
+
 ### `dl`
 
 Dead-letter logical topic or physical Event Hub name. When an event handler returns an exchange with an exception, the subscriber republishes the original payload to this destination.

@@ -22,7 +22,7 @@ import java.util.Map;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
-import static org.chenile.pubsub.azure.constants.ChenileKafkaConstants.CHENILE_TOPIC_KEY;
+import static org.chenile.pubsub.azure.constants.ChenileAzureConstants.CHENILE_TOPIC_KEY;
 
 
 public class AzureEventHubSubscriber implements Consumer<EventContext>, InitializingBean {
