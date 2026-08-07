@@ -5,6 +5,7 @@ import org.chenile.core.context.ChenileExchange;
 import org.chenile.core.context.ContextContainer;
 import org.chenile.core.event.EventProcessor;
 import org.chenile.pubsub.ChenilePub;
+import org.chenile.pubsub.ChenileMessageHandler;
 import org.chenile.pubsub.azure.pub.AzurePublisher;
 import org.chenile.pubsub.azure.sub.AzureEventHubSubscriber;
 import org.chenile.pubsub.interceptor.PubSubMessageInterceptor;
@@ -31,8 +32,10 @@ public class AzurePubSubConfiguration {
     AzureEventHubSubscriber azureEventHubSubscriber(EventProcessor eventProcessor,
                                                     ChenilePub chenilePub,
                                                     ChenileEventHubProperties chenileEventHubProperties,
-                                                    List<PubSubMessageInterceptor> pubSubMessageInterceptors){
-        return new AzureEventHubSubscriber(eventProcessor,chenilePub,chenileEventHubProperties, pubSubMessageInterceptors);
+                                                    List<PubSubMessageInterceptor> pubSubMessageInterceptors,
+                                                    List<ChenileMessageHandler> messageHandlers){
+        return new AzureEventHubSubscriber(eventProcessor,chenilePub,chenileEventHubProperties,
+                pubSubMessageInterceptors, messageHandlers);
     }
 
 

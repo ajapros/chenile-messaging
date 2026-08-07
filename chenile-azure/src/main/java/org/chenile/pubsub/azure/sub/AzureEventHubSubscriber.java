@@ -7,6 +7,7 @@ import org.chenile.core.context.ContextContainer;
 import org.chenile.core.context.HeaderUtils;
 import org.chenile.core.event.EventProcessor;
 import org.chenile.pubsub.ChenilePub;
+import org.chenile.pubsub.ChenileMessageHandler;
 import org.chenile.pubsub.azure.configuration.ChenileEventHubProperties;
 import org.chenile.pubsub.interceptor.PubSubDirection;
 import org.chenile.pubsub.interceptor.PubSubMessage;
@@ -36,6 +37,7 @@ public class AzureEventHubSubscriber implements Consumer<EventContext>, Initiali
 
     private final ChenileEventHubProperties chenileEventHubProperties;
     private final List<PubSubMessageInterceptor> interceptors;
+    private final List<ChenileMessageHandler> messageHandlers;
 
     public AzureEventHubSubscriber(EventProcessor eventProcessor, ChenilePub chenilePub,
                                    ChenileEventHubProperties chenileEventHubProperties) {
@@ -45,10 +47,18 @@ public class AzureEventHubSubscriber implements Consumer<EventContext>, Initiali
     public AzureEventHubSubscriber(EventProcessor eventProcessor, ChenilePub chenilePub,
                                    ChenileEventHubProperties chenileEventHubProperties,
                                    List<PubSubMessageInterceptor> interceptors) {
+        this(eventProcessor, chenilePub, chenileEventHubProperties, interceptors, Collections.emptyList());
+    }
+
+    public AzureEventHubSubscriber(EventProcessor eventProcessor, ChenilePub chenilePub,
+                                   ChenileEventHubProperties chenileEventHubProperties,
+                                   List<PubSubMessageInterceptor> interceptors,
+                                   List<ChenileMessageHandler> messageHandlers) {
         this.eventProcessor = eventProcessor;
         this.chenilePub = chenilePub;
         this.chenileEventHubProperties = chenileEventHubProperties;
         this.interceptors = interceptors == null ? Collections.emptyList() : interceptors;
+        this.messageHandlers = messageHandlers == null ? Collections.emptyList() : messageHandlers;
     }
 
     @Override
@@ -121,6 +131,16 @@ public class AzureEventHubSubscriber implements Consumer<EventContext>, Initiali
         }
         try {
             contextContainer.setTenant(tenant);
+            List<ChenileMessageHandler> handlers = messageHandlers.stream()
+                    .filter(handler -> handler.supports(topic))
+                    .toList();
+            if (handlers.size() > 1) {
+                throw new IllegalStateException("More than one ChenileMessageHandler owns topic '" + topic + "'");
+            }
+            if (handlers.size() == 1) {
+                handlers.getFirst().handle(topic, body, propertiesMap);
+                return Collections.emptyList();
+            }
             return eventProcessor.handleEvent(topic, body, propertiesMap);
         } finally {
             contextContainer.setTenant(previousTenant);
