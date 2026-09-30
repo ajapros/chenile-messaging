@@ -70,18 +70,15 @@ public class KafkaConsumerConfig {
     public void listenGroupFoo2(@Payload String message, @Headers Map<String,Object> headers,
                                 @Header(KafkaHeaders.RECEIVED_TOPIC) String topic,
                                 @Header(ChenileKafkaConstants.CHENILE_TOPIC_KEY) String chenileTopic) {
-        System.out.println("Received Message in group f1: " + message);
-        System.out.println(headers);
         messageArrived(chenileTopic,message,headers);
     }
 
     public void messageArrived(String topic, String messageContent,  Map<String,Object>  headers)  {
-        logger.info("Received at topic = |" + topic + "| message = ||\n" + messageContent + "||\n"
-                + " with User properties = ");
+        logger.debug("Received at topic = |{}| message = ||\n{}||\n with User properties = ", topic, messageContent);
         if(headers != null) {
             headers.forEach(
                     (k,v) -> {
-                        logger.info("key = " + k + " value = " + new String(String.valueOf(v)));
+                        logger.debug("key = {} value = {}", k, v);
                     });
         }
 

@@ -115,7 +115,7 @@ public class MqttPublisher implements ChenilePub {
         for (String key: properties.keySet()){
             userProperties.add(new UserProperty(key,properties.get(key).toString()));
         }
-        logger.info("At the publish message sending client ID {} as the source of the message with payload = {} " +
+        logger.debug("At the publish message sending client ID {} as the source of the message with payload = {} " +
                 "and qos = {} to topic {} with properties {}", v5Client.getClientId(), payload, qos, topic, properties);
         // always add the source to every MQTT message.
         userProperties.add(new UserProperty(Constants.SOURCE, v5Client.getClientId()));

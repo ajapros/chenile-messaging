@@ -121,7 +121,7 @@ public class CustomKafkaConsumer implements ApplicationListener<ApplicationReady
         }
 
         public void handleMessage(ConsumerRecord<String, Object> record) {
-            logger.info("Processing message from topic '{}': {}", record.topic(), record.value());
+            logger.debug("Processing message from topic '{}': {}", record.topic(), record.value());
             Map<String, String> headers = headersToMap(record.headers());
             eventProcessor.handleEvent(record.topic(), record.value(),headers);
         }

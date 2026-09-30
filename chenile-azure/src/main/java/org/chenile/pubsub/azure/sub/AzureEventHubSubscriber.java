@@ -64,12 +64,12 @@ public class AzureEventHubSubscriber implements Consumer<EventContext>, Initiali
     @Override
     public void accept(EventContext eventContext) {
         String body = eventContext.getEventData().getBodyAsString();
-        LOGGER.info("Received event: {}", body);
+        LOGGER.debug("Received event: {}", body);
 
         // Access custom properties
         eventContext.getEventData().getProperties()
                 .forEach((key, val) ->
-                        LOGGER.info("Property: {} = {}", key, val)
+                        LOGGER.debug("Property: {} = {}", key, val)
                 );
 
         Map<String, Object> metadata = new HashMap<>();
@@ -97,7 +97,9 @@ public class AzureEventHubSubscriber implements Consumer<EventContext>, Initiali
             LOGGER.info("Checkpoint updated for partition {}", eventContext.getPartitionContext().getPartitionId());
             eventContext.updateCheckpoint();
         } catch (Exception e) {
-            LOGGER.error("Error processing event: {}", body, e);
+            LOGGER.error("Error processing event on topic {} partition {} sequence {}", topic,
+                    eventContext.getPartitionContext().getPartitionId(),
+                    eventContext.getEventData().getSequenceNumber(), e);
             throw new RuntimeException(e);
         }
     }

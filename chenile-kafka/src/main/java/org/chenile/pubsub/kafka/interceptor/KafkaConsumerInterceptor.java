@@ -25,7 +25,7 @@ public class KafkaConsumerInterceptor implements ConsumerInterceptor<String, Str
     @Override
     public ConsumerRecords<String, String> onConsume(ConsumerRecords<String, String> records) {
         for (ConsumerRecord<String, String> record : records) {
-            logger.info("[INTERCEPTOR] topic={}, partition={}, offset={}, key={}, value={}",
+            logger.debug("[INTERCEPTOR] topic={}, partition={}, offset={}, key={}, value={}",
                     record.topic(),
                     record.partition(),
                     record.offset(),

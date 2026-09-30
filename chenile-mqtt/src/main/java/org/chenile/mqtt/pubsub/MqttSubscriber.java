@@ -44,7 +44,6 @@ public class MqttSubscriber implements MqttCallback, ChenileSub {
 
     private void log(String message){
         logger.info(message);
-        System.out.println(message);
     }
     @Override
     public void disconnected(MqttDisconnectResponse disconnectResponse) {
@@ -72,13 +71,13 @@ public class MqttSubscriber implements MqttCallback, ChenileSub {
     @Override
     public void messageArrived(String topic, MqttMessage message) throws Exception {
         String messageContent = new String(message.getPayload());
-        log("Received at topic = |" + topic + "| message = ||\n" + messageContent + "||\n"
-                + " with ID = " + message.getId() + "User properties = ");
+        logger.debug("Received at topic = |{}| message = ||\n{}||\n with ID = {} User properties = ",
+                topic, messageContent, message.getId());
         Map<String,Object> headers = new HashMap<>();
         if(message.getProperties() != null) {
             message.getProperties().getUserProperties().forEach(
                     (up) -> {
-                        log("key = " + up.getKey() + " value = " + up.getValue());
+                        logger.debug("key = {} value = {}", up.getKey(), up.getValue());
                         headers.put(up.getKey(), up.getValue());
                     });
         }
@@ -107,7 +106,7 @@ public class MqttSubscriber implements MqttCallback, ChenileSub {
      */
     private boolean shouldIgnore(MqttMessage message) throws Exception{
         if(message.isDuplicate()){
-            log("Received duplicate message: " + new String(message.getPayload()));
+            log("Received duplicate message with ID = " + message.getId());
             publisher.sendAck(message);
             return true;
         }
