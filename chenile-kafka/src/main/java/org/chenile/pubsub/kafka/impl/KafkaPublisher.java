@@ -15,6 +15,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import static org.chenile.pubsub.kafka.constants.ChenileKafkaConstants.*;
 
@@ -26,12 +27,23 @@ public class KafkaPublisher implements ChenilePub {
 
     private final KafkaTemplate<String, String> kafkaTemplate;
     private final PubSubInfoProvider pubSubInfoProvider;
+    private final long waitTimeMillis;
 
     @Autowired
     public KafkaPublisher(KafkaTemplate<String, String> kafkaTemplate,
                           PubSubInfoProvider pubSubInfoProvider) {
+        this(kafkaTemplate, pubSubInfoProvider, 0);
+    }
+
+    public KafkaPublisher(KafkaTemplate<String, String> kafkaTemplate,
+                          PubSubInfoProvider pubSubInfoProvider,
+                          long waitTimeMillis) {
         this.kafkaTemplate = kafkaTemplate;
         this.pubSubInfoProvider = pubSubInfoProvider;
+        this.waitTimeMillis = waitTimeMillis;
+        if (this.waitTimeMillis < 0) {
+            throw new IllegalArgumentException("pubsub.publish.waitTime must not be negative");
+        }
     }
     /**
      * Publishes a message to the given service's operation topic.
@@ -74,7 +86,7 @@ public class KafkaPublisher implements ChenilePub {
                 buildHeaders(topic, properties)
         );
 
-        kafkaTemplate.send(record);
+        send(record);
     }
 
     /**
@@ -94,7 +106,22 @@ public class KafkaPublisher implements ChenilePub {
                 buildHeaders(topic, properties)
         );
 
-        kafkaTemplate.send(record);
+        send(record);
+    }
+
+    private void send(ProducerRecord<String, String> record) {
+        var result = kafkaTemplate.send(record);
+        if (waitTimeMillis == 0) {
+            return;
+        }
+        try {
+            result.get(waitTimeMillis, TimeUnit.MILLISECONDS);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException("Kafka publication interrupted", e);
+        } catch (Exception e) {
+            throw new IllegalStateException("Kafka publication failed", e);
+        }
     }
 
     /**
