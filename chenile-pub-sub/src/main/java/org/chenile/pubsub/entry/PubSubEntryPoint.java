@@ -44,6 +44,9 @@ public class PubSubEntryPoint {
 		 exchange.setBody(messageContent);
 		 populateHeaders(headers,exchange);
 		 chenileEntryPoint.execute(exchange);
+		 if (exchange.getException() != null) {
+			 throw exchange.getException();
+		 }
 		 Object response = exchange.getResponse();
 		 if (logger.isDebugEnabled())
 			 logger.debug("Received message {} and handled it. Response = {}", messageContent,
