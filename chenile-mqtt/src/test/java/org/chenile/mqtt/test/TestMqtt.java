@@ -43,4 +43,15 @@ public  class TestMqtt extends MqttBaseTest {
 		Assert.assertEquals("Sum is not computed correctly",23,sharedData.sum );
 	}
 
+	@Test @Order(2) public void testIfTopicBoundToEventRaisesTheEvent() throws Exception {
+		Map<String, Object> headers = new HashMap<>();
+		headers.put(Constants.TEST_MODE, true);
+		String s = new ObjectMapper().writeValueAsString(new Payload(4,9));
+		publisher.publish("chenile/events/sum", s, headers);
+		if(!sharedData.eventLatch.await(3, TimeUnit.SECONDS)){
+			Assert.fail("Timed out waiting for the event subscriber to complete");
+		}
+		Assert.assertEquals("Sum is not computed correctly",13,sharedData.eventSum );
+	}
+
 }

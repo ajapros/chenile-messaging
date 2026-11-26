@@ -3,6 +3,7 @@ package org.chenile.mqtt.test.service;
 import jakarta.servlet.http.HttpServletRequest;
 import org.chenile.base.response.GenericResponse;
 import org.chenile.http.annotation.ChenileController;
+import org.chenile.http.annotation.EventsSubscribedTo;
 import org.chenile.http.handler.ControllerSupport;
 import org.chenile.pubsub.model.ChenilePubSub;
 import org.springframework.http.ResponseEntity;
@@ -20,5 +21,12 @@ public class TestController extends ControllerSupport{
 														   @PathVariable("num3") int num3,
 														  @RequestBody Payload payload){
 		return process("f",request,num3,payload);
+	}
+
+	@PostMapping("/g")
+	@EventsSubscribedTo({"mqttSum"})
+	ResponseEntity<GenericResponse<Map<String, Object>>> g(HttpServletRequest request,
+														  @RequestBody Payload payload){
+		return process("g",request,payload);
 	}
 }

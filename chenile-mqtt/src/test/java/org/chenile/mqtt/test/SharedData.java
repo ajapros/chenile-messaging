@@ -10,4 +10,6 @@ import java.util.concurrent.CountDownLatch;
 public class SharedData {
     public CountDownLatch latch = new CountDownLatch(1);
     public int sum; // this will be updated with the computed sum by the test class.
+    public CountDownLatch eventLatch = new CountDownLatch(1);
+    public int eventSum; // updated when the MQTT topic bound to a Chenile event delivers a message
 }

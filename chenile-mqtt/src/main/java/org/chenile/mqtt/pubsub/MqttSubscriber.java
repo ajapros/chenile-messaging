@@ -1,5 +1,11 @@
 package org.chenile.mqtt.pubsub;
 
+import org.chenile.configuration.mqtt.MqttEventBindingProperties;
+import org.chenile.core.context.ChenileExchange;
+import org.chenile.core.context.ContextContainer;
+import org.chenile.core.context.HeaderUtils;
+import org.chenile.core.event.EventProcessor;
+import org.chenile.core.model.ChenileConfiguration;
 import org.chenile.pubsub.ChenileSub;
 import org.chenile.pubsub.constants.Constants;
 import org.chenile.pubsub.entry.PubSubEntryPoint;
@@ -17,14 +23,27 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.event.EventListener;
+import org.springframework.core.annotation.Order;
 
 import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
  * MQTT subscription call back that supports receiving messages, reconnects etc.
+ * <p>A message is routed in one of two ways:</p>
+ * <ul>
+ *     <li>If its topic is bound to a Chenile event (see {@link MqttEventBindingProperties}), the event is raised
+ *     through {@link EventProcessor}, which runs every operation subscribed to it.</li>
+ *     <li>Otherwise it is a {@code @ChenilePubSub} invocation: the topic names the service and operation, and
+ *     {@link PubSubEntryPoint} invokes that operation.</li>
+ * </ul>
  */
 public class MqttSubscriber implements MqttCallback, ChenileSub {
+    private static final String MQTT_ENTRY_POINT_SUB_TYPE = "MQTT";
     private final boolean mqttEnabled;
     @Autowired @Qualifier("pubSubConfig")
     Map<String,String> pubSubConfig;
@@ -38,8 +57,41 @@ public class MqttSubscriber implements MqttCallback, ChenileSub {
     @Autowired
     MqttPublisher publisher;
 
-    public MqttSubscriber(boolean mqttEnabled) {
+    @Autowired
+    EventProcessor eventProcessor;
+    @Autowired @Qualifier("chenileServiceConfiguration")
+    ChenileConfiguration chenileConfiguration;
+    private final MqttEventBindingProperties eventBindingProperties;
+    private final Map<String, String> topicToEvent = new LinkedHashMap<>();
+
+    public MqttSubscriber(boolean mqttEnabled, MqttEventBindingProperties eventBindingProperties) {
         this.mqttEnabled = mqttEnabled;
+        this.eventBindingProperties = eventBindingProperties;
+    }
+
+    /**
+     * Validates the topic to event bindings and subscribes to the bound topics. Runs after the Chenile
+     * configuration (including event subscriptions) has been initialized.
+     */
+    @EventListener(ApplicationReadyEvent.class)
+    @Order(910)
+    public void subscribeToEventTopics() throws MqttException {
+        topicToEvent.clear();
+        eventBindingProperties.getTopicBindings().forEach((topic, eventId) -> {
+            if (topic == null || topic.isBlank() || eventId == null || eventId.isBlank()) {
+                throw new IllegalStateException("MQTT topics and Chenile event IDs must not be blank");
+            }
+            if (!chenileConfiguration.getEvents().containsKey(eventId)) {
+                throw new IllegalStateException(
+                        "MQTT topic '" + topic + "' is bound to unknown Chenile event '" + eventId + "'");
+            }
+            topicToEvent.put(topic, eventId);
+        });
+        if (!mqttEnabled || topicToEvent.isEmpty()) return;
+        logger.info("Subscribing to MQTT topic to event bindings: {}", topicToEvent);
+        for (String topic : topicToEvent.keySet()) {
+            v5Client.subscribe(topic, eventBindingProperties.getQos()).waitForCompletion();
+        }
     }
 
     private void log(String message){
@@ -155,6 +207,15 @@ public class MqttSubscriber implements MqttCallback, ChenileSub {
     @Override
     public void connectComplete(boolean reconnect, String serverURI) {
         log(String.format("Connection to %s complete. Reconnect=%b", serverURI, reconnect));
+        if (reconnect && v5Client != null && mqttEnabled) {
+            for (String topic : topicToEvent.keySet()) {
+                try {
+                    v5Client.subscribe(topic, eventBindingProperties.getQos());
+                } catch (Exception e) {
+                    log("Unable to subscribe to event topic " + topic + ". Error = " + e.getMessage());
+                }
+            }
+        }
         if (reconnect && pubSubConfig != null && !pubSubConfig.isEmpty() && v5Client != null &&
              mqttEnabled ){
             for (String serviceTopic: pubSubConfig.keySet()){
@@ -182,6 +243,11 @@ public class MqttSubscriber implements MqttCallback, ChenileSub {
 
     @Override
     public void messageArrived(String topic, String message, Map<String, Object> headers) {
+        String eventId = topicToEvent.get(topic);
+        if (eventId != null) {
+            raiseEvent(eventId, message, headers);
+            return;
+        }
         try {
             pubSubEntryPoint.process(topic, message, headers);
         }catch(Exception e){
@@ -191,6 +257,35 @@ public class MqttSubscriber implements MqttCallback, ChenileSub {
 
     }
 
+
+    /**
+     * Raises the Chenile event bound to the topic. Every subscribed operation runs through the
+     * chenile-highway. A failure is thrown back so that the message is not acknowledged.
+     */
+    private void raiseEvent(String eventId, String message, Map<String, Object> headers) {
+        Map<String, String> eventHeaders = new HashMap<>();
+        if (headers != null) {
+            headers.forEach((key, value) -> eventHeaders.put(key, String.valueOf(value)));
+        }
+        eventHeaders.put(HeaderUtils.ENTRY_POINT, Constants.PUB_SUB_ENTRY_POINT);
+        eventHeaders.put(HeaderUtils.ENTRY_POINT_SUB_TYPE, MQTT_ENTRY_POINT_SUB_TYPE);
+        ContextContainer context = ContextContainer.CONTEXT_CONTAINER;
+        ContextContainer.ContextSnapshot snapshot = context.snapshot();
+        try {
+            List<ChenileExchange> exchanges = eventProcessor.handleEvent(eventId, message, eventHeaders);
+            if (exchanges.isEmpty()) {
+                throw new IllegalStateException("No Chenile subscriber handled event '" + eventId + "'");
+            }
+            for (ChenileExchange exchange : exchanges) {
+                if (exchange.getException() != null) {
+                    throw new IllegalStateException(
+                            "Chenile event subscriber failed for event '" + eventId + "'", exchange.getException());
+                }
+            }
+        } finally {
+            context.restore(snapshot);
+        }
+    }
 
     private String getUserPropertyValue(MqttMessage message, String key){
         MqttProperties props = message.getProperties();

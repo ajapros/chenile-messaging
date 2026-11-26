@@ -33,5 +33,8 @@ pubsub:
       retain: false
       topic: /chenile/mqtt
 
-
-
+chenile:
+  mqtt:
+    qos: 1
+    topic-bindings:
+      "[chenile/events/sum]": mqttSum

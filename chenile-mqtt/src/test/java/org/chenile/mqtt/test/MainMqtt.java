@@ -1,5 +1,6 @@
 package org.chenile.mqtt.test;
 
+import org.chenile.configuration.mqtt.MqttEventBindingProperties;
 import org.chenile.mqtt.pubsub.MqttSubscriber;
 import org.eclipse.paho.mqttv5.client.IMqttToken;
 import org.eclipse.paho.mqttv5.client.MqttAsyncClient;
@@ -26,7 +27,7 @@ public class MainMqtt {
         IMqttToken token = v5Client.connect(connectionOptions);
         token.waitForCompletion(12000);
 
-        MqttSubscriber subscriber = new MqttSubscriber(true);
+        MqttSubscriber subscriber = new MqttSubscriber(true, new MqttEventBindingProperties());
         v5Client.setCallback(subscriber);
         v5Client.subscribe("/chenile/mqtt", 2);
         for(;;){

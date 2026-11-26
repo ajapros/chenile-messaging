@@ -20,4 +20,12 @@ public class TestServiceImpl implements TestService {
 		sharedData.latch.countDown();
 		return sum;
 	}
+
+	@Override
+	public int g(Payload payload) {
+		int sum = payload.num1 + payload.num2;
+		sharedData.eventSum = sum;
+		sharedData.eventLatch.countDown();
+		return sum;
+	}
 }
