@@ -124,8 +124,15 @@ public class MqttConfiguration {
     }
 
     @Bean
-    MqttSubscriber mqttSubscriber(@Autowired MqttAsyncClient v5Client) {
-        MqttSubscriber subscriber = new MqttSubscriber(mqttEnabled);
+    @ConfigurationProperties(prefix = "chenile.mqtt")
+    MqttEventBindingProperties mqttEventBindingProperties() {
+        return new MqttEventBindingProperties();
+    }
+
+    @Bean
+    MqttSubscriber mqttSubscriber(@Autowired MqttAsyncClient v5Client,
+                                  @Autowired MqttEventBindingProperties mqttEventBindingProperties) {
+        MqttSubscriber subscriber = new MqttSubscriber(mqttEnabled, mqttEventBindingProperties);
         v5Client.setCallback(subscriber);
         return subscriber;
     }
